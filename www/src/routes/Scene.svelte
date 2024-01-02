@@ -23,7 +23,7 @@
 
 <T.PerspectiveCamera
   makeDefault
-  position={[50, 50, 50]}
+  position={[0, 20, 30]}
   fov={30}
 >
   <OrbitControls  />
@@ -48,7 +48,7 @@
         }}
       />
     </T.BufferGeometry>
-    <T.PointsMaterial size={0.25} color={"rgb(10, 130, 170)"} />
+    <T.PointsMaterial size={0.25} color={"rgb(40, 200, 2505)"} />
   </T.Points>
 
   <T.Points>
@@ -64,6 +64,6 @@
         }}
       />
     </T.BufferGeometry>
-    <T.PointsMaterial size={0.25} color={"rgb(170, 10, 130)"} />
+    <T.PointsMaterial size={0.25} color={"rgb(255, 40, 200)"} />
   </T.Points>
 </Align>

@@ -2,6 +2,7 @@
 
 Discrete Fourier Transform in Svelte+ThreeJS+Rust+WASM
 
+![Screenshot of the UI](preview.png)
 
 ## Build WASM module
 
