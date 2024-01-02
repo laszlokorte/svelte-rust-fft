@@ -1,24 +1,55 @@
 <script lang="ts">
-  import { T } from '@threlte/core'
-  import { Align, OrbitControls } from '@threlte/extras'
+  import { T, useStage, useTask, useThrelte } from '@threlte/core'
+  import { Align, OrbitControls, MeshLineGeometry, MeshLineMaterial } from '@threlte/extras'
+  import CssObject from './CssObject.svelte'
+  import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js'
+  import { ConeGeometry, MeshStandardMaterial, BufferGeometry, Vector3, CylinderGeometry } from 'three'
 
+  export let cssTarget
   export let times;
   export let freqs;
 
-  const time_positions = new Float32Array(times.length / 2 * 3)
-  const freq_positions = new Float32Array(freqs.length / 2 * 3)
+  const { scene, size, autoRenderTask, camera } = useThrelte()
+  const cssRenderer = new CSS2DRenderer({ element: cssTarget })
+  $: cssRenderer.setSize($size.width, $size.height)
+
+
+  const time_positions = new Array(times.length / 2).fill(null)
+  const freq_positions = new Array(freqs.length / 2).fill(null)
   // 3D math squiggles
-  $: for (let i = 0; i < times.length; i+=1) {
-    time_positions[3*(i)] = i/60
-    time_positions[3*(i)+1] = times[(2*i)]
-    time_positions[3*(i)+2] = times[(2*i)+1]
+  $: for (let i = 0; i < time_positions.length; i+=1) {
+    time_positions[(i)] = new Vector3((i-0.25*times.length)/30, times[(2*i)], times[(2*i)+1])
   }
 
-  $: for (let i = 0; i < freqs.length; i+=1) {
-    freq_positions[3*(i)] = i/60
-    freq_positions[3*(i)+1] = freqs[(2*i)] / freqs.length
-    freq_positions[3*(i)+2] = freqs[(2*i)+1] / freqs.length
+  $: for (let i = 0; i < time_positions.length; i+=1) {
+    freq_positions[(i)] = new Vector3((i-0.25*times.length)/30, 2*freqs[(2*i)]/times.length, 2*freqs[(2*i)+1]/times.length)
   }
+
+  scene.matrixWorldAutoUpdate = false
+
+  // To update the matrices *once* per frame, we'll use a task that is added
+  // right before the autoRenderTask. This way, we can be sure that the
+  // matrices are updated before the renderers run.
+  useTask(
+    () => {
+      scene.updateMatrixWorld()
+    },
+    { before: autoRenderTask }
+  )
+
+  // The CSS2DRenderer needs to be updated after the autoRenderTask, so we
+  // add a task that runs after it.
+  useTask(
+    () => {
+      // Update the DOM
+      cssRenderer.render(scene, camera.current)
+    },
+    {
+      after: autoRenderTask,
+      autoInvalidate: false
+    }
+  )
+
 </script>
 
 <T.PerspectiveCamera
@@ -34,36 +65,71 @@
   position.z={10}
 />
 
-<Align>
-  <T.Points>
-    <T.BufferGeometry>
-      <T.BufferAttribute
-        args={[time_positions, 3]}
-        attach={(parent, self) => {
-          parent.setAttribute('position', self)
-          return () => {
-            // cleanup function called when ref changes or the component unmounts
-            // https://threlte.xyz/docs/reference/core/t#attach
-          }
-        }}
-      />
-    </T.BufferGeometry>
-    <T.PointsMaterial size={0.25} color={"rgb(40, 200, 2505)"} />
-  </T.Points>
 
-  <T.Points>
-    <T.BufferGeometry>
-      <T.BufferAttribute
-        args={[freq_positions, 3]}
-        attach={(parent, self) => {
-          parent.setAttribute('position', self)
-          return () => {
-            // cleanup function called when ref changes or the component unmounts
-            // https://threlte.xyz/docs/reference/core/t#attach
-          }
-        }}
-      />
-    </T.BufferGeometry>
-    <T.PointsMaterial size={0.25} color={"rgb(255, 40, 200)"} />
-  </T.Points>
-</Align>
+
+
+<T.Mesh rotation.z={-Math.PI/2} position={[6, 0, 0]} geometry={new CylinderGeometry(0.03, 0.03, 12, 10)} material={new MeshStandardMaterial({color: "white"})}>
+</T.Mesh>
+
+
+<T.Mesh rotation.y={-Math.PI/2} position={[0, 3, 0]} geometry={new CylinderGeometry(0.03, 0.03, 6, 10)} material={new MeshStandardMaterial({color: "white"})}>
+</T.Mesh>
+
+<T.Mesh rotation.x={Math.PI/2} position={[0, 0, 2]} geometry={new CylinderGeometry(0.03, 0.03, 4, 10)} material={new MeshStandardMaterial({color: "white"})}>
+</T.Mesh>
+
+<T.Mesh>
+  <MeshLineGeometry
+    points={time_positions}
+  />
+  <MeshLineMaterial
+    depthTest={false}
+    width={0.1}
+    color={"#ff33aa"}
+    attenuate={true}
+  />
+</T.Mesh>
+
+
+<T.Mesh>
+  <MeshLineGeometry
+    points={freq_positions}
+  />
+  <MeshLineMaterial
+    depthTest={false}
+    width={0.1}
+    color={"#33aaff"}
+    attenuate={true}
+  />
+</T.Mesh>
+
+<T.Mesh rotation.z={-Math.PI/2} position={[12, 0, 0]} geometry={new ConeGeometry(0.2, 0.5, 10)} material={new MeshStandardMaterial({color: "white"})}>
+</T.Mesh>
+
+<T.Mesh rotation.y={-Math.PI/2} position={[0, 6, 0]} geometry={new ConeGeometry(0.2, 0.5, 10)} material={new MeshStandardMaterial({color: "white"})}>
+</T.Mesh>
+
+<T.Mesh rotation.x={Math.PI/2} position={[0, 0, 4]} geometry={new ConeGeometry(0.2, 0.5, 10)} material={new MeshStandardMaterial({color: "white"})}>
+</T.Mesh>
+
+
+<CssObject
+  position={[12, 1, 1]}
+  center={[0, 0.5]}
+>
+  Time
+</CssObject>
+
+<CssObject
+  position={[1, 6, 1]}
+  center={[0, 0.5]}
+>
+  Real
+</CssObject>
+
+<CssObject
+  position={[1, 1, 4]}
+  center={[0, 0.5]}
+>
+ Imaginary
+</CssObject>

@@ -8,6 +8,8 @@
 	import * as fft from "fftwasm";
 	import {memory} from "fftwasm/fftwasm_bg.wasm";
 
+	let cssTarget = null
+
 	let signal = fft.Signal.new(2048)
 
 	let freq = 5;
@@ -43,12 +45,20 @@
 		max-width: min-content;
 		margin: 1em;
 	}
+
+	.css-canvas {
+		pointer-events: none;
+		position: absolute;
+		inset: 0;
+	}
 </style>
 
 <div class="scene-container">
   <Canvas>
-    <Scene times={times} freqs={freqs} />
+    <Scene cssTarget={cssTarget} times={times} freqs={freqs} />
   </Canvas>
+
+  <div bind:this={cssTarget} class="css-canvas"></div>
 
   <nav class="controls">
   	<fieldset>
