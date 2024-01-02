@@ -1,8 +1,10 @@
 [package]
 name = "fftwasm"
-version = "0.1.0"
+version = "0.2.0"
+description = "Discrete Fourier Transform in Svelte+ThreeJS+Rust+WASM"
 authors = ["Laszlo Korte <laszlokorte@users.noreply.github.com>"]
 edition = "2018"
+repository = 'https://github.com/laszlokorte/svelte-rust-fft'
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -18,6 +20,7 @@ wasm-bindgen = "0.2.84"
 # all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
 # code size when deploying.
 console_error_panic_hook = { version = "0.1.7", optional = true }
+rustfft = "6.1.0"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.34"

@@ -10,12 +10,17 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
 	},
 	"dependencies": {
-		"fftwasm": "file:../pkg"
+		"@threlte/core": "^7.0.12",
+		"@threlte/extras": "^8.1.1",
+		"@types/three": "^0.160.0",
+		"fftwasm": "file:../pkg",
+		"three": "^0.160.0"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^3.0.0",
 		"@sveltejs/kit": "^2.0.0",
 		"@sveltejs/vite-plugin-svelte": "^3.0.0",
+		"@yushijinhun/three-minifier-rollup": "^0.4.0",
 		"svelte": "^4.2.7",
 		"svelte-check": "^3.6.0",
 		"tslib": "^2.4.1",
