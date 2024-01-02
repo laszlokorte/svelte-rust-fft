@@ -30,9 +30,6 @@
 		grid-template: 1fr;
 	}
 
-	.canvas {
-		grid-area: 1 / 1;
-	}
 	.controls {
 		grid-area: 1 / 1;
 		z-index: 10;
