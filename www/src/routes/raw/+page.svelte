@@ -1,3 +1,7 @@
+<svelte:head>
+	<title>Fourier Cube</title>
+</svelte:head>
+
 <script>
   import { onMount } from 'svelte';
   import { createScene } from "./scene";
@@ -7,7 +11,6 @@
   let fraction = 0
 
   $: if(scene) {
-  	console.log(fraction)
   	scene.setFraction(fraction)
   }
 

@@ -41,6 +41,60 @@ export const createScene = (el : HTMLCanvasElement) => {
     1,1,1,1,1
   ]);
 
+
+
+
+  const curveGeo = new LineSegmentsGeometry();
+    curveGeo.setPositions(Array(128).fill(1).map((v,i,a) => [v, i/a.length]).flatMap(([a,x]) => 
+      [0,0,(x-0.5)*9.5,
+       Math.cos(x*Math.PI*4),-a*Math.sin(x*Math.PI*4),(x-0.5)*9.5]));
+    
+   const curve2Geo = new LineSegmentsGeometry();
+   curve2Geo.setPositions(Array(128).fill(1).map((v,i,a) => [v, i/a.length]).flatMap(([a,x]) => 
+      [Math.cos(x*Math.PI*4),-a*Math.sin(x*Math.PI*4),(x-0.5)*9.5,
+       Math.cos(x*Math.PI*4),-a*Math.sin(x*Math.PI*4),(x-0.5)*9.5]));
+
+
+   const curve2GeoShadow = new LineSegmentsGeometry();
+   curve2GeoShadow.setPositions(Array(128).fill(1).map((v,i,a) => [v, i/a.length]).flatMap(([a,x]) => 
+      [Math.cos(x*Math.PI*4),-a*Math.sin(x*Math.PI*4),5,
+       Math.cos(x*Math.PI*4),-a*Math.sin(x*Math.PI*4),5,
+
+      -5,-a*Math.sin(x*Math.PI*4),(x-0.5)*9.5,
+      -5,-a*Math.sin(x*Math.PI*4),(x-0.5)*9.5,
+
+      Math.cos(x*Math.PI*4),-5*0.7,(x-0.5)*9.5,
+      Math.cos(x*Math.PI*4),-5*0.7,(x-0.5)*9.5
+       ]));
+
+
+
+    const axisGeo = new LineSegmentsGeometry();
+    axisGeo.setPositions([
+      -2.8,0,0,
+      2.8,0,0,
+      2.8,0,0,
+      3,0,0,
+
+      0,-2.8,0,
+      0,2.8,0,
+      0,2.8,0,
+      0,3,0,
+
+      0,0,4.8,
+      0,0,-4.8,
+      0,0,-4.8,
+      0,0,-5,
+    ]);
+
+    axisGeo.setWidths([
+      1,1,4,1,
+      1,1,4,1,
+      1,1,4,1
+    ]);
+
+
+
   let lineMats = []
 
   const rotations = [
@@ -113,31 +167,6 @@ export const createScene = (el : HTMLCanvasElement) => {
 
     side.scale.y = 0.7
 
-    const axisGeo = new LineSegmentsGeometry();
-    axisGeo.setPositions([
-      -2.8,0,0,
-      2.8,0,0,
-      2.8,0,0,
-      3,0,0,
-
-      0,-2.8,0,
-      0,2.8,0,
-      0,2.8,0,
-      0,3,0,
-
-      0,0,4.8,
-      0,0,-4.8,
-      0,0,-4.8,
-      0,0,-5,
-    ]);
-
-    axisGeo.setWidths([
-      1,1,4,1,
-      1,1,4,1,
-      1,1,4,1
-    ]);
-
-
     const axisMaterial = new LineMaterial({
       color: color & 0b00000000_00010111_00010111_00010111,
       linewidth: 2, // in world units with size attenuation, pixels otherwise
@@ -160,7 +189,6 @@ export const createScene = (el : HTMLCanvasElement) => {
     axis.renderOrder = i*2+3
     axisMaterial.depthTest = true
     graph.add(axis)
-    side.add(graphOuter)
 
     //graph.position.x = 8
     lineMats.push(axisMaterial)
@@ -177,7 +205,6 @@ export const createScene = (el : HTMLCanvasElement) => {
     outlineMat.depthTest = true
     outlineMat.depthWrite = true
     outlineMat.transparent = true
-    outlineMat.opacity = 1
     outlineMat.stencilWrite = true;
     outlineMat.stencilRef = i;
     outlineMat.stencilFunc = THREE.EqualStencilFunc;
@@ -192,16 +219,6 @@ export const createScene = (el : HTMLCanvasElement) => {
 
 
     side.add(outline)
-
-
-
-
-
-    const curveGeo = new LineSegmentsGeometry();
-    curveGeo.setPositions(Array(128).fill(1).map((v,i,a) => [v, i/a.length]).flatMap(([a,x]) => 
-      [0,0,(x-0.5)*9.5,
-       0,-a*Math.sin(x*Math.PI*4),(x-0.5)*9.5]));
-
 
     const curveMaterial = new LineMaterial({
       // color: color & 0b00000000_01000000_01000000_01000000 | 0b00000000_10111111_10111111_10111111,
@@ -232,12 +249,6 @@ export const createScene = (el : HTMLCanvasElement) => {
     lineMats.push(curveMaterial)
 
 
-   const curve2Geo = new LineSegmentsGeometry();
-   curve2Geo.setPositions(Array(128).fill(1).map((v,i,a) => [v, i/a.length]).flatMap(([a,x]) => 
-      [0,-a*Math.sin(x*Math.PI*4),(x-0.5)*9.5,
-       0,-a*Math.sin(x*Math.PI*4),(x-0.5)*9.5]));
-
-
     const curve2Material = new LineMaterial({
       // color: color & 0b00000000_01000000_01000000_01000000 | 0b00000000_10111111_10111111_10111111,
       color: color,
@@ -262,7 +273,33 @@ export const createScene = (el : HTMLCanvasElement) => {
     curve2.renderOrder = i*2+4
     graph.add(curve2)
 
+    const curve2MaterialShadow = new LineMaterial({
+      color: color & 0b00000000_01110000_01110000_01110000,
+      linewidth: 3, // in world units with size attenuation, pixels otherwise
+      vertexColors: false,
+      dashed: false,
+      alphaToCoverage: false,
+      depthTest: false,
+      depthWrite: true,
+    });
 
+    lineMats.push(curve2MaterialShadow)
+
+    curve2MaterialShadow.transparent = true
+    curve2MaterialShadow.opacity = 0.3
+    curve2MaterialShadow.stencilWrite = true;
+    curve2MaterialShadow.stencilRef = i;
+    curve2MaterialShadow.stencilFunc = THREE.EqualStencilFunc;
+
+    const curve2shadow = new LineSegments2(curve2GeoShadow, curve2MaterialShadow);
+    curve2shadow.computeLineDistances();
+
+    curve2shadow.renderOrder = i*2+4
+    graph.add(curve2shadow)
+
+
+
+    sideOuter.add(graphOuter)
 
 
     // side.add(outlineMesh)
