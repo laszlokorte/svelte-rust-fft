@@ -62,10 +62,10 @@ export const createScene = (el : HTMLCanvasElement) => {
     face.renderOrder = i*2
     cube.renderOrder = i*2+1
 
-    const light = new THREE.DirectionalLight( "white", 1);
-    light.position.x = 1
-    light.position.y = 2
-    light.position.z = 3
+    const light = new THREE.DirectionalLight( "white", 5/i);
+    light.position.x = 7
+    light.position.y = 11
+    light.position.z = 13
 
     side.add(face);
     side.add(cube);
@@ -76,8 +76,6 @@ export const createScene = (el : HTMLCanvasElement) => {
     side.rotation.z = rot.z
 
     sideOuter.scale.y = 0.7
-
-    
 
     const curveMat = new MeshLineMaterial( { color: color&0xafa0a0, lineWidth: 0.03, sizeAttenuation : 1 } );
 
@@ -142,7 +140,7 @@ export const createScene = (el : HTMLCanvasElement) => {
       -5,5,-5,
      ]);
 
-    const outlineMat = new MeshLineMaterial( { depthTest: false, color: color&0xfcfcfc, lineWidth: 0.004, sizeAttenuation : 0 } )
+    const outlineMat = new MeshLineMaterial( { depthTest: false, color: (color|0x777777)&0xdadada, lineWidth: 0.004, sizeAttenuation : 0 } )
 
     outlineMat.stencilWrite = true;
     outlineMat.stencilRef = i;
