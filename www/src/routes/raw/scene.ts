@@ -7,14 +7,15 @@ import {LineSegmentsGeometry} from './lines/LineSegmentsGeometry.js'
 export const createScene = (el : HTMLCanvasElement) => {
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 1000);
+  const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 1000);
   const boxGeoX = new THREE.BoxGeometry(10, 10, 10);
   boxGeoX.addGroup(0,6, 0)
   boxGeoX.addGroup(6,Infinity, 1)
 
   const boxGeo = new THREE.BoxGeometry();
-  const light = new THREE.AmbientLight("white", 1);
+  const light = new THREE.AmbientLight("white", 4);
 
+  const stretchHeight = 0.5
 
   const outlineGeo = new LineSegmentsGeometry();
   outlineGeo.setPositions([
@@ -84,12 +85,12 @@ export const createScene = (el : HTMLCanvasElement) => {
   let lineMats = []
 
   const rotations = [
-    {rot: new THREE.Vector3(0, 0*Math.PI/2, 0), color:  0x00ffff},
-    {rot: new THREE.Vector3(0, 1*Math.PI/2, 0), color: 0x00ff00},
-    {rot: new THREE.Vector3(0, 2*Math.PI/2, 0), color: 0xff00ff},
-    {rot: new THREE.Vector3(0, 3*Math.PI/2, 0), color: 0xffff00},
-    {rot: new THREE.Vector3(0,0,-Math.PI/2), color: 0xff0000},
-    {rot: new THREE.Vector3(0,0,+Math.PI/2), color: 0x0000ff},
+    {rot: new THREE.Vector3(0, 0*Math.PI/2, 0), color:  0x00ffff, shadow: true, showAxis: true},
+    {rot: new THREE.Vector3(0, 1*Math.PI/2, 0), color: 0x00ff00, shadow: true, showAxis: true},
+    {rot: new THREE.Vector3(0, 2*Math.PI/2, 0), color: 0xff00ff, shadow: true, showAxis: true},
+    {rot: new THREE.Vector3(0, 3*Math.PI/2, 0), color: 0xff0000, shadow: true, showAxis: true},
+    {rot: new THREE.Vector3(0,0,-Math.PI/2), color: 0xffff00, shadow: false, showAxis: false},
+    {rot: new THREE.Vector3(0,0,+Math.PI/2), color: 0x0000ff, shadow: false, showAxis: false},
   ]
 
   const axees = []
@@ -98,7 +99,7 @@ export const createScene = (el : HTMLCanvasElement) => {
   let sides = new THREE.Group();
 
   let i = 1;
-  for(let {rot, color} of rotations) {
+  for(let {rot, color, shadow, showAxis} of rotations) {
     let sideOuter = new THREE.Group();
     let sideInner = new THREE.Group();
     let side = new THREE.Group();
@@ -109,7 +110,10 @@ export const createScene = (el : HTMLCanvasElement) => {
     const color_mask_add = 0b00000000_10100000_10100000_10100000
     const line_color_mask_sub = 0b00000000_01110111_01110111_01110111
     const line_color_mask_add = 0b00000000_00111111_00111111_00111111
+    const window_color_mask_sub = 0b00000000_00110111_00110111_00110111
+    const window_color_mask_add = 0b00000000_11000000_11000000_11000000
     const cubeMaterial = new THREE.MeshLambertMaterial({ color: color & color_mask_sub | color_mask_add });
+    const windowMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
     const faceMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
     const nullMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
@@ -135,7 +139,14 @@ export const createScene = (el : HTMLCanvasElement) => {
     cubeMaterial.depthWrite = false
     cubeMaterial.depthTest = false;
 
-    const cube = new THREE.Mesh(boxGeoX, [cubeMaterial, cubeMaterial]);
+    windowMaterial.stencilWrite = true;
+    windowMaterial.stencilRef = i;
+    windowMaterial.stencilFunc = THREE.EqualStencilFunc;
+    windowMaterial.side = THREE.BackSide;
+    windowMaterial.depthWrite = true
+    windowMaterial.depthTest = true;
+
+    const cube = new THREE.Mesh(boxGeoX, [nullMaterial, cubeMaterial]);
     const face = new THREE.Mesh(boxGeoX, [faceMaterial, nullMaterial]);
 
     face.renderOrder = i*2
@@ -152,14 +163,14 @@ export const createScene = (el : HTMLCanvasElement) => {
 
     side.add(sideInner)
 
-    side.scale.y = 0.7
+    side.scale.y = stretchHeight
 
     const axisMaterial = new LineMaterial({
       color: color & 0b00000000_00010111_00010111_00010111,
-      linewidth: 1.4, // in world units with size attenuation, pixels otherwise
+      linewidth: 2, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       dashed: false,
-      alphaToCoverage: false,
+      alphaToCoverage: true,
       depthTest: false,
       depthWrite: false,
       transparent: true,
@@ -173,12 +184,15 @@ export const createScene = (el : HTMLCanvasElement) => {
 
     const axis = new LineSegments2(axisGeo, axisMaterial);
     axis.computeLineDistances();
+    axis.scale.y = 0.7
 
     axees.push(graphOuter)
 
     axis.renderOrder = i*2+5
     axisMaterial.depthTest = true
-    graph.add(axis)
+
+    if(showAxis)
+      graph.add(axis)
 
     //graph.position.x = 8
     lineMats.push(axisMaterial)
@@ -186,7 +200,7 @@ export const createScene = (el : HTMLCanvasElement) => {
 
     const outlineMat = new LineMaterial({
       color: color & line_color_mask_sub | line_color_mask_add,
-      linewidth: 1.3, // in world units with size attenuation, pixels otherwise
+      linewidth: 1.1, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       dashed: false,
       alphaToCoverage: true,
@@ -203,7 +217,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     const outline = new LineSegments2(outlineGeo, outlineMat);
     outline.computeLineDistances();
 
-    outline.renderOrder = i*2+2
+    outline.renderOrder = i*2+5
 
 
 
@@ -212,17 +226,18 @@ export const createScene = (el : HTMLCanvasElement) => {
 
     const curveMaterial = new LineMaterial({
       // color: color & 0b00000000_01000000_01000000_01000000 | 0b00000000_10111111_10111111_10111111,
-      color: 0xf0f0f0 | color,
-      linewidth: 1, // in world units with size attenuation, pixels otherwise
+      color: color| 0xffffff,
+      linewidth: 3, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       dashed: false,
       alphaToCoverage: true,
-      transparent: false,
+      transparent: true,
       depthTest: true,
       depthWrite: true
     });
 
 
+    curveMaterial.opacity = 0.7;
     curveMaterial.stencilWrite = true;
     curveMaterial.stencilRef = i;
     curveMaterial.stencilFunc = THREE.EqualStencilFunc;
@@ -241,14 +256,14 @@ export const createScene = (el : HTMLCanvasElement) => {
 
     const curve2Material = new LineMaterial({
       // color: color & 0b00000000_01000000_01000000_01000000 | 0b00000000_10111111_10111111_10111111,
-      color: color,
-      linewidth: 5, // in world units with size attenuation, pixels otherwise
+      color: color&0xa0a0a0| 0x070707,
+      linewidth: 6, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       dashed: false,
       alphaToCoverage: true,
       transparent: true,
-      depthTest: false,
-      depthWrite: false
+      depthTest: true,
+      depthWrite: true
     });
 
     lineMats.push(curve2Material)
@@ -269,7 +284,7 @@ export const createScene = (el : HTMLCanvasElement) => {
       vertexColors: false,
       dashed: false,
       alphaToCoverage: false,
-      depthTest: false,
+      depthTest: true,
       depthWrite: true,
     });
 
@@ -284,19 +299,16 @@ export const createScene = (el : HTMLCanvasElement) => {
     const curve2shadow = new LineSegments2(curve2GeoShadow, curve2MaterialShadow);
     curve2shadow.computeLineDistances();
 
-    curve2shadow.renderOrder = i*2+4
-    graph.add(curve2shadow)
-
-
+    curve2shadow.renderOrder = i*2+1
+    if(shadow)
+      graph.add(curve2shadow)
 
     sideOuter.add(graphOuter)
 
-
-    // side.add(outlineMesh)
     sideOuter.add(side)
 
     sides.add(sideOuter);
-    cubeSides.push({sideOuter, cubeMaterial, face, curve2MaterialShadow, curveMaterial, curve2Material, axisMaterial,outlineMat})
+    cubeSides.push({sideOuter, cubeMaterial, face, curve2MaterialShadow, curveMaterial, windowMaterial, curve2Material, axisMaterial,outlineMat})
   }
   
   let currentFocus = null
@@ -305,26 +317,29 @@ export const createScene = (el : HTMLCanvasElement) => {
       cubeSides[s].sideOuter.visible = focus==null
       cubeSides[s].face.visible = focus==null
       cubeSides[s].cubeMaterial.stencilRef = s+2
+      cubeSides[s].windowMaterial.stencilRef = s+2
       cubeSides[s].curveMaterial.stencilRef = s+2
       cubeSides[s].curve2Material.stencilRef = s+2
       cubeSides[s].axisMaterial.stencilRef = s+2
       cubeSides[s].outlineMat.stencilRef = s+2
+      cubeSides[s].curve2MaterialShadow.stencilRef = s+2
     }
 
     if(focus!=null) {
       cubeSides[focus].sideOuter.visible = true
       cubeSides[focus].face.visible = false
       cubeSides[focus].cubeMaterial.stencilRef = 0
+      cubeSides[focus].windowMaterial.stencilRef = 0
       cubeSides[focus].curveMaterial.stencilRef = 0
       cubeSides[focus].curve2Material.stencilRef = 0
       cubeSides[focus].axisMaterial.stencilRef = 0
       cubeSides[focus].outlineMat.stencilRef = 0
-      cubeSides[focus].outlineMat.opacity = 0.3
+      cubeSides[focus].curve2MaterialShadow.stencilRef = 0
 
       controls.minDistance = 1
-      controls.maxDistance = 20
+      controls.maxDistance = 9
     } else {
-      controls.minDistance = 10
+      controls.minDistance = 6
       controls.maxDistance = 20
     }
 
@@ -332,14 +347,14 @@ export const createScene = (el : HTMLCanvasElement) => {
   }
 
   
-  const dirLight = new THREE.DirectionalLight( "white", 5);
+  const dirLight = new THREE.DirectionalLight( "white", 3);
   dirLight.position.x = 7
   dirLight.position.y = 11
   dirLight.position.z = 13
+  scene.add(dirLight);
 
   scene.add(light);
   scene.add(sides);
-  scene.add(dirLight);
 
 
   camera.position.z = 20;
@@ -350,8 +365,28 @@ export const createScene = (el : HTMLCanvasElement) => {
 
   const controls = new OrbitControls( camera, renderer.domElement );
 
-  controls.minDistance = 10
-  controls.maxDistance = 20
+  let prevDistance = camera.position.length()
+
+  controls.addEventListener('start', (e) => {
+    
+    const newLength = camera.position.length()
+
+    if(Math.abs(newLength - prevDistance) < 0.001) {
+      prevDistance = newLength-0.001
+
+      return
+    }
+
+    prevDistance = newLength
+
+    if(newLength <= 8 && currentFocus === null) {
+      focusSide(indexOfSmallest(refRotations.map((x) => x.dot(new THREE.Vector3(1,1/stretchHeight,1).multiply(camera.position)))))
+    } else if(newLength > 8 && currentFocus === indexOfSmallest(refRotations.map((x) => x.dot(new THREE.Vector3(1,1/stretchHeight,1).multiply(camera.position))))) {
+      focusSide(null)
+    }
+  })
+
+  focusSide(null)
   controls.enablePan  = false
 
   const refRotations = rotations.map((r) => (new THREE.Vector3(-1,0,0)).applyEuler(new THREE.Euler(r.rot.x, r.rot.y, r.rot.z)))
@@ -367,11 +402,8 @@ export const createScene = (el : HTMLCanvasElement) => {
 
   const animate = () => {
     controls.update();
-    if(camera.position.length() < 11 && currentFocus == null) {
-      focusSide(indexOfSmallest(refRotations.map((x) => x.dot(camera.position))))
-    } else if(camera.position.length() > 15 && currentFocus != null) {
-      focusSide(null)
-    }
+    dirLight.position.copy(camera.position).sub(new THREE.Vector3(5,-15,1))
+
     renderer.render(scene, camera);
   };
 
@@ -412,11 +444,17 @@ export const createScene = (el : HTMLCanvasElement) => {
         [im,re,5,
          im,re,5,
 
+         im,re,-5,
+         im,re,-5,
+
         -5,re,(t-0.5)*9.5,
         -5,re,(t-0.5)*9.5,
 
-        im,-5*0.7,(t-0.5)*9.5,
-        im,-5*0.7,(t-0.5)*9.5
+        im,-5*stretchHeight,(t-0.5)*9.5,
+        im,-5*stretchHeight,(t-0.5)*9.5,
+
+        im,5*stretchHeight,(t-0.5)*9.5,
+        im,5*stretchHeight,(t-0.5)*9.5,
          ]));
 
     }

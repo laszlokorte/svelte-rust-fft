@@ -73,7 +73,14 @@ class LineSegmentsGeometry extends InstancedBufferGeometry {
 	}
 
 	setPositions( array ) {
-
+		if(this.prevLength) {
+			if(this.prevLength > array.length) {
+				array.push(...Array(this.prevLength - array.length).fill(0))
+			}
+		} 
+		
+		this.prevLength = array.length
+		
 		let lineSegments;
 
 		if ( array instanceof Float32Array ) {
@@ -95,6 +102,7 @@ class LineSegmentsGeometry extends InstancedBufferGeometry {
 
 		this.computeBoundingBox();
 		this.computeBoundingSphere();
+
 
 		return this;
 
