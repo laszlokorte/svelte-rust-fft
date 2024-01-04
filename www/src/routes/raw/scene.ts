@@ -43,17 +43,15 @@ export const createScene = (el : HTMLCanvasElement) => {
     1,1,1,1,1
   ]);
 
-
-  const curveGeo = new LineSegmentsGeometry();
     
-   const curve2Geo = new LineSegmentsGeometry();
+   const curveGeo = new LineSegmentsGeometry();
 
-   const curve2GeoShadow = new LineSegmentsGeometry();
-    curveGeo.setPositions([0,0,0,0,0,0]);
-   curve2Geo.setPositions([0,0,0,0,0,0]);
-
-   curve2GeoShadow.setPositions([0,0,0,0,0,0]);
-
+   curveGeo.setPositions([0,0,0,0,0,0]);
+   curveGeo.addGroup(0,Infinity, 0)
+   curveGeo.addGroup(0,Infinity, 1)
+   curveGeo.addGroup(0,Infinity, 2)
+   curveGeo.addGroup(0,Infinity, 3)
+   curveGeo.addGroup(0,Infinity, 4)
 
 
 
@@ -86,11 +84,11 @@ export const createScene = (el : HTMLCanvasElement) => {
   let lineMats = []
 
   const rotations = [
-    {rot: new THREE.Vector3(0, 0*Math.PI/2, 0), color:  0x00ffff, shadow: true, showAxis: true},
-    {rot: new THREE.Vector3(0, 1*Math.PI/2, 0), color: 0x00ff00, shadow: true, showAxis: true},
-    {rot: new THREE.Vector3(0, 2*Math.PI/2, 0), color: 0xff00ff, shadow: true, showAxis: true},
-    {rot: new THREE.Vector3(0, 3*Math.PI/2, 0), color: 0xff0000, shadow: true, showAxis: true},
-    {rot: new THREE.Vector3(0,0,+Math.PI/2), color: 0x0000ff, shadow: false, showAxis: false},
+    {rot: new THREE.Vector3(0, 0*Math.PI/2, 0), color:  0x00ffff, shadow: true, showAxis: true, curveRot: 0},
+    {rot: new THREE.Vector3(0, 1*Math.PI/2, 0), color: 0x00ff00, shadow: true, showAxis: true, curveRot: Math.PI},
+    {rot: new THREE.Vector3(0, 2*Math.PI/2, 0), color: 0xff00ff, shadow: true, showAxis: true, curveRot: 0},
+    {rot: new THREE.Vector3(0, 3*Math.PI/2, 0), color: 0xff0000, shadow: true, showAxis: true, curveRot: 0},
+    {rot: new THREE.Vector3(0,0,+Math.PI/2), color: 0x0000ff, shadow: false, showAxis: false, curveRot: 0},
     {rot: new THREE.Vector3(0,0,-Math.PI/2), skip: true},
   ]
 
@@ -100,9 +98,9 @@ export const createScene = (el : HTMLCanvasElement) => {
   let sides = new THREE.Group();
 
   let i = 1;
-  for(let {rot, color, shadow, showAxis, skip} of rotations) {
+  for(let {rot, color, shadow, showAxis, skip, curveRot} of rotations) {
     if(skip) continue;
-    
+
     let sideOuter = new THREE.Group();
     let sideInner = new THREE.Group();
     let side = new THREE.Group();
@@ -227,7 +225,7 @@ export const createScene = (el : HTMLCanvasElement) => {
 
     side.add(outline)
 
-    const curveMaterial = new LineMaterial({
+    const curveBarMaterial = new LineMaterial({
       // color: color & 0b00000000_01000000_01000000_01000000 | 0b00000000_10111111_10111111_10111111,
       color: color| 0xffffff,
       linewidth: 2, // in world units with size attenuation, pixels otherwise
@@ -240,24 +238,29 @@ export const createScene = (el : HTMLCanvasElement) => {
     });
 
 
-    curveMaterial.opacity = 0.7;
-    curveMaterial.stencilWrite = true;
-    curveMaterial.stencilRef = i;
-    curveMaterial.stencilFunc = THREE.EqualStencilFunc;
+    curveBarMaterial.opacity = 0.7;
+    curveBarMaterial.stencilWrite = true;
+    curveBarMaterial.stencilRef = i;
+    curveBarMaterial.stencilFunc = THREE.EqualStencilFunc;
+    curveBarMaterial.linearProjection = true;
+    curveBarMaterial.startProjectionMul = new THREE.Vector3(0,0,1);
+    curveBarMaterial.startProjectionAdd = new THREE.Vector3(0,0,0);
+    curveBarMaterial.endProjectionMul = new THREE.Vector3(1,1,1);
+    curveBarMaterial.endProjectionAdd = new THREE.Vector3(0,0,0);
 
-    const curve = new LineSegments2(curveGeo, curveMaterial);
-    curve.computeLineDistances();
+    const curveBars = new LineSegments2(curveGeo, curveBarMaterial);
+    curveBars.computeLineDistances();
 
-    curve.renderOrder = i*2+3
-    graph.add(curve)
+    curveBars.renderOrder = i*2+3
+    graph.add(curveBars)
 
     graphOuter.add(graph)
     graphOuter.rotation.y = rot.y
 
-    lineMats.push(curveMaterial)
+    lineMats.push(curveBarMaterial)
 
 
-    const curve2Material = new LineMaterial({
+    const curveDotMaterial = new LineMaterial({
       // color: color & 0b00000000_01000000_01000000_01000000 | 0b00000000_10111111_10111111_10111111,
       color: color&0xa0a0a0| 0x070707,
       linewidth: 6, // in world units with size attenuation, pixels otherwise
@@ -269,49 +272,131 @@ export const createScene = (el : HTMLCanvasElement) => {
       depthWrite: true
     });
 
-    lineMats.push(curve2Material)
+    lineMats.push(curveDotMaterial)
 
-    curve2Material.stencilWrite = true;
-    curve2Material.stencilRef = i;
-    curve2Material.stencilFunc = THREE.EqualStencilFunc;
+    curveDotMaterial.stencilWrite = true;
+    curveDotMaterial.stencilRef = i;
+    curveDotMaterial.stencilFunc = THREE.EqualStencilFunc;
 
-    const curve2 = new LineSegments2(curve2Geo, curve2Material);
-    curve2.computeLineDistances();
+    const curveDots = new LineSegments2(curveGeo, curveDotMaterial);
+    curveDots.computeLineDistances();
 
-    curve2.renderOrder = i*2+4
-    graph.add(curve2)
+    curveDots.renderOrder = i*2+4
+    graph.add(curveDots)
 
-    const curve2MaterialShadow = new LineMaterial({
+    const shadow1 = new LineMaterial({
       color: color & 0b00000000_01110000_01110000_01110000,
       linewidth: 3, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       dashed: false,
       alphaToCoverage: false,
-      depthTest: true,
-      depthWrite: true,
+      depthTest: false,
+      depthWrite: false,
     });
 
-    lineMats.push(curve2MaterialShadow)
+    lineMats.push(shadow1)
 
-    curve2MaterialShadow.transparent = true
-    curve2MaterialShadow.opacity = 0.3
-    curve2MaterialShadow.stencilWrite = true;
-    curve2MaterialShadow.stencilRef = i;
-    curve2MaterialShadow.stencilFunc = THREE.EqualStencilFunc;
+    shadow1.transparent = true
+    shadow1.opacity = 0.05
+    shadow1.stencilWrite = true;
+    shadow1.stencilRef = i;
+    shadow1.stencilFunc = THREE.EqualStencilFunc;
+    shadow1.linearProjection = true;
+    shadow1.startProjectionMul = new THREE.Vector3(0,1,1);
+    shadow1.startProjectionAdd = new THREE.Vector3(-5,0,0).applyEuler(new THREE.Euler(0,curveRot,0));
+    shadow1.endProjectionMul = new THREE.Vector3(0,1,1);
+    shadow1.endProjectionAdd = new THREE.Vector3(-5,0,0).applyEuler(new THREE.Euler(0,curveRot,0));
 
-    const curve2shadow = new LineSegments2(curve2GeoShadow, curve2MaterialShadow);
-    curve2shadow.computeLineDistances();
 
-    curve2shadow.renderOrder = i*2+1
+    const shadow2 = new LineMaterial({
+      color: color & 0b00000000_01110000_01110000_01110000,
+      linewidth: 3, // in world units with size attenuation, pixels otherwise
+      vertexColors: false,
+      dashed: false,
+      alphaToCoverage: false,
+      depthTest: false,
+      depthWrite: false,
+    });
+
+    lineMats.push(shadow2)
+
+    shadow2.transparent = true
+    shadow2.opacity = 0.05
+    shadow2.stencilWrite = true;
+    shadow2.stencilRef = i;
+    shadow2.stencilFunc = THREE.EqualStencilFunc;
+    shadow2.linearProjection = true;
+    shadow2.startProjectionMul = new THREE.Vector3(1,0,1);
+    shadow2.startProjectionAdd = new THREE.Vector3(0,-2.5,0);
+    shadow2.endProjectionMul = new THREE.Vector3(1,0,1);
+    shadow2.endProjectionAdd = new THREE.Vector3(0,-2.5,0);
+
+    const shadow3 = new LineMaterial({
+      color: color & 0b00000000_01110000_01110000_01110000,
+      linewidth: 3, // in world units with size attenuation, pixels otherwise
+      vertexColors: false,
+      dashed: false,
+      alphaToCoverage: false,
+      depthTest: false,
+      depthWrite: false,
+    });
+
+    lineMats.push(shadow3)
+
+    shadow3.transparent = true
+    shadow3.opacity = 0.05
+    shadow3.stencilWrite = true;
+    shadow3.stencilRef = i;
+    shadow3.stencilFunc = THREE.EqualStencilFunc;
+    shadow3.linearProjection = true;
+    shadow3.startProjectionMul = new THREE.Vector3(1,1,0);
+    shadow3.startProjectionAdd = new THREE.Vector3(0,0,5);
+    shadow3.endProjectionMul = new THREE.Vector3(1,1,0);
+    shadow3.endProjectionAdd = new THREE.Vector3(0,0,5);
+
+
+    const shadow4 = new LineMaterial({
+      color: color & 0b00000000_01110000_01110000_01110000,
+      linewidth: 3, // in world units with size attenuation, pixels otherwise
+      vertexColors: false,
+      dashed: false,
+      alphaToCoverage: false,
+      depthTest: false,
+      depthWrite: false,
+    });
+
+    lineMats.push(shadow4)
+
+    shadow4.transparent = true
+    shadow4.opacity = 0.05
+    shadow4.stencilWrite = true;
+    shadow4.stencilRef = i;
+    shadow4.stencilFunc = THREE.EqualStencilFunc;
+    shadow4.linearProjection = true;
+    shadow4.startProjectionMul = new THREE.Vector3(1,1,0);
+    shadow4.startProjectionAdd = new THREE.Vector3(0,0,-5);
+    shadow4.endProjectionMul = new THREE.Vector3(1,1,0);
+    shadow4.endProjectionAdd = new THREE.Vector3(0,0,-5);
+
+
+    const curveShadows = new LineSegments2(curveGeo, [shadow1, shadow2, shadow3, shadow4]);
+    curveShadows.computeLineDistances();
+
+    curveShadows.renderOrder = i*2+1
     if(shadow)
-      graph.add(curve2shadow)
+      graph.add(curveShadows)
 
     sideOuter.add(graphOuter)
 
     sideOuter.add(side)
 
+
+    curveBars.rotation.y = -curveRot
+    curveDots.rotation.y = -curveRot
+    curveShadows.rotation.y = -curveRot
+
     sides.add(sideOuter);
-    cubeSides.push({sideOuter, cubeMaterial, face, curve2MaterialShadow, curveMaterial, windowMaterial, curve2Material, axisMaterial,outlineMat})
+    cubeSides.push({curveDots, curveBars, sideOuter, cubeMaterial, face, shadow1, shadow2, shadow3, shadow4, curveBarMaterial, windowMaterial, curveDotMaterial, axisMaterial,outlineMat})
   }
   
   let currentFocus = null
@@ -321,11 +406,15 @@ export const createScene = (el : HTMLCanvasElement) => {
       cubeSides[s].face.visible = focus==null
       cubeSides[s].cubeMaterial.stencilRef = s+2
       cubeSides[s].windowMaterial.stencilRef = s+2
-      cubeSides[s].curveMaterial.stencilRef = s+2
-      cubeSides[s].curve2Material.stencilRef = s+2
+      cubeSides[s].curveBarMaterial.stencilRef = s+2
+      cubeSides[s].curveBarMaterial.opacity = (focus!=null ? 0.5 : 0.2)
+      cubeSides[s].curveDotMaterial.stencilRef = s+2
       cubeSides[s].axisMaterial.stencilRef = s+2
       cubeSides[s].outlineMat.stencilRef = s+2
-      cubeSides[s].curve2MaterialShadow.stencilRef = s+2
+      cubeSides[s].shadow1.stencilRef = s+2
+      cubeSides[s].shadow2.stencilRef = s+2
+      cubeSides[s].shadow3.stencilRef = s+2
+      cubeSides[s].shadow4.stencilRef = s+2
     }
 
     if(focus!=null) {
@@ -333,11 +422,14 @@ export const createScene = (el : HTMLCanvasElement) => {
       cubeSides[focus].face.visible = false
       cubeSides[focus].cubeMaterial.stencilRef = 0
       cubeSides[focus].windowMaterial.stencilRef = 0
-      cubeSides[focus].curveMaterial.stencilRef = 0
-      cubeSides[focus].curve2Material.stencilRef = 0
+      cubeSides[focus].curveBarMaterial.stencilRef = 0
+      cubeSides[focus].curveDotMaterial.stencilRef = 0
       cubeSides[focus].axisMaterial.stencilRef = 0
       cubeSides[focus].outlineMat.stencilRef = 0
-      cubeSides[focus].curve2MaterialShadow.stencilRef = 0
+      cubeSides[focus].shadow1.stencilRef = 0
+      cubeSides[focus].shadow2.stencilRef = 0
+      cubeSides[focus].shadow3.stencilRef = 0
+      cubeSides[focus].shadow4.stencilRef = 0
 
       socket.visible = false
 
@@ -363,8 +455,8 @@ export const createScene = (el : HTMLCanvasElement) => {
   scene.add(sides);
 
   const socketMat = new THREE.MeshLambertMaterial({ color: 0x333333 });
-  socketMat.depthTest = true
-  socketMat.depthWrite = true
+  socketMat.depthTest = false
+  socketMat.depthWrite = false
 
   const socket = new THREE.Mesh(socketGeo, socketMat);
   socket.position.y=-2.6
@@ -438,29 +530,8 @@ export const createScene = (el : HTMLCanvasElement) => {
     },
     setSignal(sig) {
      curveGeo.setPositions(sig.map((v,i,a) => [v, i/a.length]).flatMap(([[re, im],t]) => 
-        [0,0,(t-0.5)*9.5,
-         im,re,(t-0.5)*9.5]));
-     curve2Geo.setPositions(sig.map((v,i,a) => [v, i/a.length]).flatMap(([[re, im],t]) => 
         [im,re,(t-0.5)*9.5,
          im,re,(t-0.5)*9.5]));
-
-     curve2GeoShadow.setPositions(sig.map((v,i,a) => [v, i/a.length]).flatMap(([[re, im],t]) => 
-        [im,re,5,
-         im,re,5,
-
-         im,re,-5,
-         im,re,-5,
-
-        -5,re,(t-0.5)*9.5,
-        -5,re,(t-0.5)*9.5,
-
-        im,-5*stretchHeight,(t-0.5)*9.5,
-        im,-5*stretchHeight,(t-0.5)*9.5,
-
-        im,5*stretchHeight,(t-0.5)*9.5,
-        im,5*stretchHeight,(t-0.5)*9.5,
-         ]));
-
     }
   }
 }

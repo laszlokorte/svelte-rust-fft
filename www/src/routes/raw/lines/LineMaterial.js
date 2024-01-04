@@ -16,21 +16,24 @@ import {
 	ShaderMaterial,
 	UniformsLib,
 	UniformsUtils,
-	Vector2
+	Vector2,
+	Vector3
 } from 'three';
 
 
 UniformsLib.line = {
-
 	worldUnits: { value: 1 },
-	varyWidth: { value: 1 },
+	startProjectionMul: {value: new Vector3( 1, 1, 1 )},
+	startProjectionAdd: {value: new Vector3( 0, 0, 0 )},
+	endProjectionMul: {value: new Vector3( 1, 1, 1 ) },
+	endProjectionAdd: {value: new Vector3( 0, 0, 0 ) },
+	linearProjection: { value: 0 },
 	linewidth: { value: 1 },
 	resolution: { value: new Vector2( 1, 1 ) },
 	dashOffset: { value: 0 },
 	dashScale: { value: 1 },
 	dashSize: { value: 1 },
 	gapSize: { value: 1 } // todo FIX - maybe change to totalSize
-
 };
 
 ShaderLib[ 'line' ] = {
@@ -51,6 +54,15 @@ ShaderLib[ 'line' ] = {
 
 		uniform float linewidth;
 		uniform vec2 resolution;
+
+		#ifdef LINEAR_PROJECTION
+
+		uniform vec3 startProjectionMul;
+		uniform vec3 startProjectionAdd;
+
+		uniform vec3 endProjectionMul;
+		uniform vec3 endProjectionAdd;
+		#endif
 
 		attribute vec3 instanceStart;
 		attribute vec3 instanceEnd;
@@ -122,9 +134,21 @@ ShaderLib[ 'line' ] = {
 
 			float aspect = resolution.x / resolution.y;
 
+			#ifdef LINEAR_PROJECTION
+			vec3 instanceStartProjected = instanceStart * startProjectionMul + startProjectionAdd;
+			vec3 instanceEndProjected = instanceEnd * endProjectionMul + endProjectionAdd;
+
+
+			// camera space
+			vec4 start = modelViewMatrix * vec4( instanceStartProjected, 1.0 );
+			vec4 end = modelViewMatrix * vec4( instanceEndProjected, 1.0 );
+			#else
+
 			// camera space
 			vec4 start = modelViewMatrix * vec4( instanceStart, 1.0 );
 			vec4 end = modelViewMatrix * vec4( instanceEnd, 1.0 );
+			#endif
+
 
 			#ifdef WORLD_UNITS
 
@@ -500,10 +524,50 @@ class LineMaterial extends ShaderMaterial {
 		}
 	}
 
+	get linearProjection() {
+
+		return 'LINEAR_PROJECTION' in this.defines;
+
+	}
+
+	set linearProjection( value ) {
+		if ( value === true ) {
+			this.defines.LINEAR_PROJECTION = '';
+		} else {
+			delete this.defines.LINEAR_PROJECTION;
+		}
+	}
+
 	get linewidth() {
 
 		return this.uniforms.linewidth.value;
 
+	}
+
+	set startProjectionMul(v) {
+		this.uniforms.startProjectionMul.value.copy( v )
+	}
+	set startProjectionAdd(v) {
+		this.uniforms.startProjectionAdd.value.copy( v )
+	}
+	set endProjectionMul(v) {
+		this.uniforms.endProjectionMul.value.copy( v )
+	}
+	set endProjectionAdd(v) {
+		this.uniforms.endProjectionAdd.value.copy( v )
+	}
+
+	get startProjectionMul() {
+		return this.uniforms.startProjectionMul
+	}
+	get startProjectionAdd() {
+		return this.uniforms.startProjectionAdd
+	}
+	get endProjectionMul() {
+		return this.uniforms.endProjectionMul
+	}
+	get endProjectionAdd() {
+		return this.uniforms.endProjectionAdd
 	}
 
 	set linewidth( value ) {
@@ -524,7 +588,6 @@ class LineMaterial extends ShaderMaterial {
 		if ( ( value === true ) !== this.dashed ) {
 
 			this.needsUpdate = true;
-
 		}
 
 		if ( value === true ) {

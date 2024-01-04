@@ -73,6 +73,7 @@ class LineSegmentsGeometry extends InstancedBufferGeometry {
 	}
 
 	setPositions( array ) {
+		const newLength = array.length
 		if(this.prevLength) {
 			if(this.prevLength > array.length) {
 				array.push(...Array(this.prevLength - array.length).fill(0))
@@ -80,6 +81,7 @@ class LineSegmentsGeometry extends InstancedBufferGeometry {
 		} 
 		
 		this.prevLength = array.length
+		this.instanceCount = newLength / 6
 		
 		let lineSegments;
 
