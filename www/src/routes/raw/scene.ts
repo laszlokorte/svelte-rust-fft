@@ -365,21 +365,11 @@ export const createScene = (el : HTMLCanvasElement) => {
 
   const controls = new OrbitControls( camera, renderer.domElement );
 
-  let prevDistance = camera.position.length()
-
-  controls.addEventListener('start', (e) => {
-    
+  controls.addEventListener('end', (e) => {
     const newLength = camera.position.length()
 
-    if(Math.abs(newLength - prevDistance) < 0.001) {
-      prevDistance = newLength-0.001
 
-      return
-    }
-
-    prevDistance = newLength
-
-    if(newLength <= 8 && currentFocus === null) {
+    if(newLength < 7 && currentFocus === null) {
       focusSide(indexOfSmallest(refRotations.map((x) => x.dot(new THREE.Vector3(1,1/stretchHeight,1).multiply(camera.position)))))
     } else if(newLength > 8 && currentFocus === indexOfSmallest(refRotations.map((x) => x.dot(new THREE.Vector3(1,1/stretchHeight,1).multiply(camera.position))))) {
       focusSide(null)
