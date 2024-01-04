@@ -1,9 +1,9 @@
 <script lang="ts">
   import { T, useStage, useTask, useThrelte } from '@threlte/core'
-  import { Align, OrbitControls, MeshLineGeometry, MeshLineMaterial } from '@threlte/extras'
+  import { Align, OrbitControls, MeshLineGeometry, MeshLineMaterial, Grid } from '@threlte/extras'
   import CssObject from './CssObject.svelte'
   import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js'
-  import { ConeGeometry, MeshStandardMaterial, BufferGeometry, Vector3, CylinderGeometry } from 'three'
+  import { ConeGeometry, BoxGeometry, MeshStandardMaterial, BufferGeometry, Vector3, CylinderGeometry } from 'three'
 
   export let cssTarget
   export let times;
@@ -60,9 +60,10 @@
   <OrbitControls  />
 </T.PerspectiveCamera>
 
-<T.DirectionalLight
-  position.y={10}
-  position.z={10}
+
+<T.AmbientLight
+  color="white"
+  itensity={1}
 />
 
 
@@ -83,7 +84,7 @@
     points={time_positions}
   />
   <MeshLineMaterial
-    depthTest={false}
+    depthTest={true}
     width={0.1}
     color={"#ff33aa"}
     attenuate={true}
@@ -96,40 +97,56 @@
     points={freq_positions}
   />
   <MeshLineMaterial
-    depthTest={false}
+    depthTest={true}
     width={0.1}
     color={"#33aaff"}
     attenuate={true}
   />
 </T.Mesh>
 
-<T.Mesh rotation.z={-Math.PI/2} position={[12, 0, 0]} geometry={new ConeGeometry(0.2, 0.5, 10)} material={new MeshStandardMaterial({color: "white"})}>
+
+<T.Mesh rotation.z={-Math.PI/2} position={[12, 0, 0]} geometry={new ConeGeometry(0.1, 0.5, 10)} material={new MeshStandardMaterial({color: "white"})}>
 </T.Mesh>
 
-<T.Mesh rotation.y={-Math.PI/2} position={[0, 6, 0]} geometry={new ConeGeometry(0.2, 0.5, 10)} material={new MeshStandardMaterial({color: "white"})}>
+<T.Mesh rotation.y={-Math.PI/2} position={[0, 6, 0]} geometry={new ConeGeometry(0.1, 0.5, 10)} material={new MeshStandardMaterial({color: "white"})}>
 </T.Mesh>
 
-<T.Mesh rotation.x={Math.PI/2} position={[0, 0, 4]} geometry={new ConeGeometry(0.2, 0.5, 10)} material={new MeshStandardMaterial({color: "white"})}>
+<T.Mesh rotation.x={Math.PI/2} position={[0, 0, 4]} geometry={new ConeGeometry(0.1, 0.5, 10)} material={new MeshStandardMaterial({color: "white"})}>
 </T.Mesh>
 
 
 <CssObject
-  position={[12, 1, 1]}
-  center={[0, 0.5]}
+  position={[12, 0, 0]}
+  center={[0.5, 0.5]}
 >
-  Time
+  <span style="display: inline-block; transform: translateY(-2em)">Time</span>
 </CssObject>
 
 <CssObject
-  position={[1, 6, 1]}
-  center={[0, 0.5]}
+  position={[0, 6, 0]}
+  center={[0.5, 0.5]}
 >
-  Real
+  <span style="display: inline-block; transform: translateY(-2em)">Real</span>
 </CssObject>
 
 <CssObject
-  position={[1, 1, 4]}
-  center={[0, 0.5]}
+  position={[0, 0, 4]}
+  center={[0.5, 0.5]}
 >
- Imaginary
+ <span style="display: inline-block; transform: translateY(-2em)">Imaginary</span>
 </CssObject>
+
+<Grid 
+infiniteGrid={true}
+sectionColor="#333"
+cellColor="#555"
+sectionThickness="1"
+cellThickness="1"
+depthTest={false}
+fadeStrength="1"
+fadeDistance="40"
+material.depthWrite={false}
+material.depthTest={true}
+material.forceSinglePass={true}
+plane="xz"
+></Grid>
