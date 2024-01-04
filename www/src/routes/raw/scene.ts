@@ -9,6 +9,7 @@ export const createScene = (el : HTMLCanvasElement) => {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 1000);
   const boxGeoX = new THREE.BoxGeometry(10, 10, 10);
+  const socketGeo = new THREE.BoxGeometry(10.05, 0.2, 10.05);
   boxGeoX.addGroup(0,6, 0)
   boxGeoX.addGroup(6,Infinity, 1)
 
@@ -89,8 +90,8 @@ export const createScene = (el : HTMLCanvasElement) => {
     {rot: new THREE.Vector3(0, 1*Math.PI/2, 0), color: 0x00ff00, shadow: true, showAxis: true},
     {rot: new THREE.Vector3(0, 2*Math.PI/2, 0), color: 0xff00ff, shadow: true, showAxis: true},
     {rot: new THREE.Vector3(0, 3*Math.PI/2, 0), color: 0xff0000, shadow: true, showAxis: true},
-    {rot: new THREE.Vector3(0,0,-Math.PI/2), color: 0xffff00, shadow: false, showAxis: false},
     {rot: new THREE.Vector3(0,0,+Math.PI/2), color: 0x0000ff, shadow: false, showAxis: false},
+    {rot: new THREE.Vector3(0,0,-Math.PI/2), skip: true},
   ]
 
   const axees = []
@@ -99,7 +100,9 @@ export const createScene = (el : HTMLCanvasElement) => {
   let sides = new THREE.Group();
 
   let i = 1;
-  for(let {rot, color, shadow, showAxis} of rotations) {
+  for(let {rot, color, shadow, showAxis, skip} of rotations) {
+    if(skip) continue;
+    
     let sideOuter = new THREE.Group();
     let sideInner = new THREE.Group();
     let side = new THREE.Group();
@@ -227,7 +230,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     const curveMaterial = new LineMaterial({
       // color: color & 0b00000000_01000000_01000000_01000000 | 0b00000000_10111111_10111111_10111111,
       color: color| 0xffffff,
-      linewidth: 3, // in world units with size attenuation, pixels otherwise
+      linewidth: 2, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       dashed: false,
       alphaToCoverage: true,
@@ -336,11 +339,14 @@ export const createScene = (el : HTMLCanvasElement) => {
       cubeSides[focus].outlineMat.stencilRef = 0
       cubeSides[focus].curve2MaterialShadow.stencilRef = 0
 
+      socket.visible = false
+
       controls.minDistance = 1
       controls.maxDistance = 9
     } else {
       controls.minDistance = 6
       controls.maxDistance = 20
+      socket.visible = true
     }
 
     currentFocus = focus
@@ -356,6 +362,14 @@ export const createScene = (el : HTMLCanvasElement) => {
   scene.add(light);
   scene.add(sides);
 
+  const socketMat = new THREE.MeshLambertMaterial({ color: 0x333333 });
+  socketMat.depthTest = true
+  socketMat.depthWrite = true
+
+  const socket = new THREE.Mesh(socketGeo, socketMat);
+  socket.position.y=-2.6
+  socket.renderOrder = 0
+  scene.add(socket);
 
   camera.position.z = 20;
   camera.position.y = 0.1;
@@ -420,7 +434,7 @@ export const createScene = (el : HTMLCanvasElement) => {
       renderer.dispose()
     },
     setFraction(frac) {
-      axees[5].rotation.y = frac * Math.PI/2
+      axees[4].rotation.y = frac * Math.PI/2
     },
     setSignal(sig) {
      curveGeo.setPositions(sig.map((v,i,a) => [v, i/a.length]).flatMap(([[re, im],t]) => 
