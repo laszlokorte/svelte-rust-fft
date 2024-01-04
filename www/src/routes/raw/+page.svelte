@@ -3,9 +3,18 @@
   import { createScene } from "./scene";
   
   let el;
+  let scene = null
+  let fraction = 0
+
+  $: if(scene) {
+  	console.log(fraction)
+  	scene.setFraction(fraction)
+  }
 
   onMount(() => {
-    return createScene(el)
+    scene = createScene(el)
+
+    return scene.dispose
   });
 </script>
 
@@ -26,6 +35,7 @@
 		display: block;
 		display: grid;
 		grid-template: 1fr;
+		background: #eff;
 	}
 
 	.controls {
@@ -46,7 +56,7 @@
 		<fieldset>
 			<legend>Controls</legend>
 
-			<input type="range" name="">
+			<input type="range" min="-4" max="4" step="0.1" bind:value={fraction} name="">
 		</fieldset>
 	</div>
 </div>
