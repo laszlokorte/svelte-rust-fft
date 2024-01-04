@@ -42,30 +42,16 @@ export const createScene = (el : HTMLCanvasElement) => {
   ]);
 
 
-
-
   const curveGeo = new LineSegmentsGeometry();
-    curveGeo.setPositions(Array(128).fill(1).map((v,i,a) => [v, i/a.length]).flatMap(([a,x]) => 
-      [0,0,(x-0.5)*9.5,
-       Math.cos(x*Math.PI*4),-a*Math.sin(x*Math.PI*4),(x-0.5)*9.5]));
     
    const curve2Geo = new LineSegmentsGeometry();
-   curve2Geo.setPositions(Array(128).fill(1).map((v,i,a) => [v, i/a.length]).flatMap(([a,x]) => 
-      [Math.cos(x*Math.PI*4),-a*Math.sin(x*Math.PI*4),(x-0.5)*9.5,
-       Math.cos(x*Math.PI*4),-a*Math.sin(x*Math.PI*4),(x-0.5)*9.5]));
-
 
    const curve2GeoShadow = new LineSegmentsGeometry();
-   curve2GeoShadow.setPositions(Array(128).fill(1).map((v,i,a) => [v, i/a.length]).flatMap(([a,x]) => 
-      [Math.cos(x*Math.PI*4),-a*Math.sin(x*Math.PI*4),5,
-       Math.cos(x*Math.PI*4),-a*Math.sin(x*Math.PI*4),5,
+    curveGeo.setPositions([0,0,0,0,0,0]);
+   curve2Geo.setPositions([0,0,0,0,0,0]);
 
-      -5,-a*Math.sin(x*Math.PI*4),(x-0.5)*9.5,
-      -5,-a*Math.sin(x*Math.PI*4),(x-0.5)*9.5,
+   curve2GeoShadow.setPositions([0,0,0,0,0,0]);
 
-      Math.cos(x*Math.PI*4),-5*0.7,(x-0.5)*9.5,
-      Math.cos(x*Math.PI*4),-5*0.7,(x-0.5)*9.5
-       ]));
 
 
 
@@ -88,9 +74,9 @@ export const createScene = (el : HTMLCanvasElement) => {
     ]);
 
     axisGeo.setWidths([
-      1,1,4,1,
-      1,1,4,1,
-      1,1,4,1
+      0.8,0.8,4,0,
+      0.8,0.8,4,0,
+      0.8,0.8,4,0
     ]);
 
 
@@ -108,6 +94,7 @@ export const createScene = (el : HTMLCanvasElement) => {
 
   const axees = []
 
+  let cubeSides = []
   let sides = new THREE.Group();
 
   let i = 1;
@@ -118,8 +105,8 @@ export const createScene = (el : HTMLCanvasElement) => {
     let graph = new THREE.Group();
     let graphOuter = new THREE.Group();
     i++;
-    const color_mask_sub = 0b00000000_11000111_11000111_11000111
-    const color_mask_add = 0b00000000_10111101_10111101_10111101
+    const color_mask_sub = 0b00000000_01000111_01000111_01000111
+    const color_mask_add = 0b00000000_10100000_10100000_10100000
     const line_color_mask_sub = 0b00000000_01110111_01110111_01110111
     const line_color_mask_add = 0b00000000_00111111_00111111_00111111
     const cubeMaterial = new THREE.MeshLambertMaterial({ color: color & color_mask_sub | color_mask_add });
@@ -169,10 +156,13 @@ export const createScene = (el : HTMLCanvasElement) => {
 
     const axisMaterial = new LineMaterial({
       color: color & 0b00000000_00010111_00010111_00010111,
-      linewidth: 2, // in world units with size attenuation, pixels otherwise
+      linewidth: 1.4, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       dashed: false,
-      alphaToCoverage: true,
+      alphaToCoverage: false,
+      depthTest: false,
+      depthWrite: false,
+      transparent: true,
     });
 
 
@@ -186,7 +176,7 @@ export const createScene = (el : HTMLCanvasElement) => {
 
     axees.push(graphOuter)
 
-    axis.renderOrder = i*2+3
+    axis.renderOrder = i*2+5
     axisMaterial.depthTest = true
     graph.add(axis)
 
@@ -223,11 +213,11 @@ export const createScene = (el : HTMLCanvasElement) => {
     const curveMaterial = new LineMaterial({
       // color: color & 0b00000000_01000000_01000000_01000000 | 0b00000000_10111111_10111111_10111111,
       color: 0xf0f0f0 | color,
-      linewidth: 2, // in world units with size attenuation, pixels otherwise
+      linewidth: 1, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       dashed: false,
       alphaToCoverage: true,
-      transparent: true,
+      transparent: false,
       depthTest: true,
       depthWrite: true
     });
@@ -306,8 +296,40 @@ export const createScene = (el : HTMLCanvasElement) => {
     sideOuter.add(side)
 
     sides.add(sideOuter);
+    cubeSides.push({sideOuter, cubeMaterial, face, curve2MaterialShadow, curveMaterial, curve2Material, axisMaterial,outlineMat})
   }
+  
+  let currentFocus = null
+  function focusSide(focus) {
+    for(let s=0;s<cubeSides.length;s++) {
+      cubeSides[s].sideOuter.visible = focus==null
+      cubeSides[s].face.visible = focus==null
+      cubeSides[s].cubeMaterial.stencilRef = s+2
+      cubeSides[s].curveMaterial.stencilRef = s+2
+      cubeSides[s].curve2Material.stencilRef = s+2
+      cubeSides[s].axisMaterial.stencilRef = s+2
+      cubeSides[s].outlineMat.stencilRef = s+2
+    }
 
+    if(focus!=null) {
+      cubeSides[focus].sideOuter.visible = true
+      cubeSides[focus].face.visible = false
+      cubeSides[focus].cubeMaterial.stencilRef = 0
+      cubeSides[focus].curveMaterial.stencilRef = 0
+      cubeSides[focus].curve2Material.stencilRef = 0
+      cubeSides[focus].axisMaterial.stencilRef = 0
+      cubeSides[focus].outlineMat.stencilRef = 0
+      cubeSides[focus].outlineMat.opacity = 0.3
+
+      controls.minDistance = 1
+      controls.maxDistance = 20
+    } else {
+      controls.minDistance = 10
+      controls.maxDistance = 20
+    }
+
+    currentFocus = focus
+  }
 
   
   const dirLight = new THREE.DirectionalLight( "white", 5);
@@ -329,11 +351,27 @@ export const createScene = (el : HTMLCanvasElement) => {
   const controls = new OrbitControls( camera, renderer.domElement );
 
   controls.minDistance = 10
-  controls.maxDistance = 40
+  controls.maxDistance = 20
   controls.enablePan  = false
+
+  const refRotations = rotations.map((r) => (new THREE.Vector3(-1,0,0)).applyEuler(new THREE.Euler(r.rot.x, r.rot.y, r.rot.z)))
+
+
+  function indexOfSmallest(a) {
+   var lowest = 0;
+   for (var i = 1; i < a.length; i++) {
+    if (a[i] < a[lowest]) lowest = i;
+   }
+   return lowest;
+  }
 
   const animate = () => {
     controls.update();
+    if(camera.position.length() < 11 && currentFocus == null) {
+      focusSide(indexOfSmallest(refRotations.map((x) => x.dot(camera.position))))
+    } else if(camera.position.length() > 15 && currentFocus != null) {
+      focusSide(null)
+    }
     renderer.render(scene, camera);
   };
 
@@ -361,6 +399,26 @@ export const createScene = (el : HTMLCanvasElement) => {
     },
     setFraction(frac) {
       axees[5].rotation.y = frac * Math.PI/2
+    },
+    setSignal(sig) {
+     curveGeo.setPositions(sig.map((v,i,a) => [v, i/a.length]).flatMap(([[re, im],t]) => 
+        [0,0,(t-0.5)*9.5,
+         im,re,(t-0.5)*9.5]));
+     curve2Geo.setPositions(sig.map((v,i,a) => [v, i/a.length]).flatMap(([[re, im],t]) => 
+        [im,re,(t-0.5)*9.5,
+         im,re,(t-0.5)*9.5]));
+
+     curve2GeoShadow.setPositions(sig.map((v,i,a) => [v, i/a.length]).flatMap(([[re, im],t]) => 
+        [im,re,5,
+         im,re,5,
+
+        -5,re,(t-0.5)*9.5,
+        -5,re,(t-0.5)*9.5,
+
+        im,-5*0.7,(t-0.5)*9.5,
+        im,-5*0.7,(t-0.5)*9.5
+         ]));
+
     }
   }
 }

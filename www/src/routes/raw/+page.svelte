@@ -9,9 +9,13 @@
   let el;
   let scene = null
   let fraction = 0
+  let freq = 0
+  let phase = 0
+  const samples = 256
 
   $: if(scene) {
   	scene.setFraction(fraction)
+  	scene.setSignal(Array(samples).fill(0).map((_,i) => [Math.cos(Math.PI*2*(freq*(i/samples-0.5)+phase)), Math.sin(Math.PI*2*(freq*(i/samples-0.5)+phase))]))
   }
 
   onMount(() => {
@@ -60,6 +64,8 @@
 			<legend>Controls</legend>
 
 			<input type="range" min="-4" max="4" step="0.1" bind:value={fraction} name="">
+			<input type="range" min="-4" max="4" step="0.1" bind:value={freq} name="">
+			<input type="range" min="-0.5" max="0.5" step="0.01" bind:value={phase} name="">
 		</fieldset>
 	</div>
 </div>
