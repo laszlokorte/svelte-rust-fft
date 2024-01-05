@@ -454,6 +454,9 @@ export const createScene = (el : HTMLCanvasElement) => {
   
   let currentFocus = null
   function focusSide(focus) {
+    if(focus && cubeSides[focus].skip) {
+      return
+    }
     for(let s=0;s<cubeSides.length;s++) {
       cubeSides[s].sideOuter.visible = focus==null
       cubeSides[s].face.visible = focus==null
