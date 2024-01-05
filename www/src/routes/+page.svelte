@@ -85,7 +85,7 @@
 
 			<label>Samples: <input list="sample-list" type="range" min="16" max="512" step="1" bind:value={samples} name=""></label>
 			<label>Amplitude: <input list="ampl-list" type="range" min="0" max="2" step="0.01" bind:value={amplitude} name=""></label>
-			<label>Frequency: <input list="freq-list" type="range" min="-4" max="4" step="0.01" bind:value={freq} name=""></label>
+			<label>Frequency: <input list="freq-list" type="range" min="-12" max="12" step="1" bind:value={freq} name=""></label>
 			<label>Phase: <input list="phase-list" type="range" min="-0.5" max="0.5" step="0.01" bind:value={phase} name=""></label>
 			<label>Fractional Transform: <input list="frac-list" type="range" min="-4" max="3" step="0.1" bind:value={fraction} name=""></label>
 

@@ -11,14 +11,19 @@ export const createScene = (el : HTMLCanvasElement) => {
   const labelsTextures = ["Re","Im","t"].map((l) => {
     const ctx = document.createElement('canvas').getContext('2d');
     if(ctx) {
-      ctx.canvas.width = 128;
-      ctx.canvas.height = 128;
+      const texRes = 128
+      ctx.canvas.width = texRes;
+      ctx.canvas.height = texRes;
+      ctx.translate(texRes/2,texRes/2)
+      ctx.rotate(-Math.PI/2)
+      ctx.translate(0,texRes/4)
+
       ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
       ctx.textAlign = "center"; 
       ctx.fillStyle = '#fff';
-      ctx.font ="100px Georgia"
-      ctx.fillText(l,ctx.canvas.width/2,2*ctx.canvas.height/3)
+      ctx.font = Math.round(texRes*0.8) + "px Georgia"
+      ctx.fillText(l,0,0)
       return new THREE.CanvasTexture(ctx.canvas);
     }
   })
@@ -58,7 +63,7 @@ export const createScene = (el : HTMLCanvasElement) => {
 
   const labelGeoNew = new LineSegmentsGeometry([LineSegmentsGeometry.squareCapStart(-3,3)]);
   labelGeoNew.setPositions([
-    -0.1,0.0,0,
+    0,0.0,0,
     0,0.0,0
   ]);
 
@@ -496,7 +501,7 @@ export const createScene = (el : HTMLCanvasElement) => {
       socket.visible = false
 
       controls.minDistance = 1
-      controls.maxDistance = 9
+      controls.maxDistance = 12
     } else {
       controls.minDistance = 6
       controls.maxDistance = 20
@@ -517,16 +522,12 @@ export const createScene = (el : HTMLCanvasElement) => {
   scene.add(sides);
 
   const socketMat = new THREE.MeshLambertMaterial({ color: 0x333333 });
-  socketMat.depthTest = true
-  socketMat.depthWrite = true
-  socketMat.stencilWrite = true;
-  socketMat.stencilRef = 0;
-  socketMat.stencilFunc = THREE.AlwaysStencilFunc;
-  socketMat.stencilZPass = THREE.ReplaceStencilOp;
+  socketMat.depthTest = false
+  socketMat.depthWrite = false
 
   const socket = new THREE.Mesh(socketGeo, socketMat);
-  socket.position.y=-5*stretchHeight-0.11
-  socket.renderOrder = 10000
+  socket.position.y=-5*stretchHeight-0.1
+  socket.renderOrder = 0
   scene.add(socket);
 
   camera.position.z = 20;
