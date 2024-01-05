@@ -12,7 +12,89 @@ from 'three';
 const _box = new Box3();
 const _vector = new Vector3();
 class LineSegmentsGeometry extends InstancedBufferGeometry {
-  constructor() {
+  static roundCapStart = (positions, uvs, r, thickness) => {
+  	const capResolution = 8
+	for (let step = 0; step < capResolution; step++) {
+      const theta0 = Math.PI / 2 + ((step + 0) * Math.PI) / capResolution;
+      const theta1 = Math.PI / 2 + ((step + 1) * Math.PI) / capResolution;
+      uvs.push(-.1+0,0);
+      uvs.push(-.1+r * Math.cos(theta0),r * Math.sin(theta0));
+      uvs.push(-.1+r * Math.cos(theta1),r * Math.sin(theta1));
+      positions.push(0, 0, 0);
+      positions.push(
+        r * thickness* Math.cos(theta0),
+        r * thickness* Math.sin(theta0),
+        0
+      );
+      positions.push(
+        r * thickness* Math.cos(theta1),
+        r * thickness* Math.sin(theta1),
+        0
+      );
+    }
+  }
+
+  static roundCapEnd = (positions, uvs, r, thickness) => {
+  	const capResolution = 8
+    for (let step = 0; step < capResolution; step++) {
+      const theta0 = (3 * Math.PI) / 2 + ((step + 0) * Math.PI) / capResolution;
+      const theta1 = (3 * Math.PI) / 2 + ((step + 1) * Math.PI) / capResolution;
+      uvs.push(0.1+0,0);
+      uvs.push(0.1+r * Math.cos(theta0),r * Math.sin(theta0));
+      uvs.push(0.1+r * Math.cos(theta1),r * Math.sin(theta1));
+      positions.push(0, 0, 1);
+      positions.push(
+        r * thickness* Math.cos(theta0),
+        r * thickness* Math.sin(theta0),
+        1
+      );
+      positions.push(
+        r * thickness* Math.cos(theta1),
+        r * thickness* Math.sin(theta1),
+        1
+      );
+    }
+  }
+
+  static arrowCapEnd = (positions, uvs, r, thickness) => {
+  	positions.push(...[
+    	0, -r*5*thickness, 1, 
+    	20, 0, 1, 
+    	20, 0, 1, 
+    	0, -r*5*thickness, 1, 
+    	20, 0, 1, 
+    	0, +r*5*thickness, 1, 
+    ])
+  	uvs.push(...[
+    	-0.1, -1, 
+    	+0.1, -1, 
+    	+0.1, +1, 
+    	-0.1, -1, 
+    	+0.1, +1, 
+    	-0.1, 1, 
+    ])
+  }
+
+  static arrowCapStart = (positions, uvs, r, thickness) => {
+  	positions.push(...[
+    	0, r*5*thickness, 0, 
+    	-20, 0, 0, 
+    	-20, 0, 0, 
+    	0, r*5*thickness, 0, 
+    	-20, 0, 0, 
+    	0, -r*5*thickness, 0, 
+    ])
+  	uvs.push(...[
+    	-0.1, -1, 
+    	+0.1, -1, 
+    	+0.1, +1, 
+    	-0.1, -1, 
+    	+0.1, +1, 
+    	-0.1, 1, 
+    ])
+  }
+
+  constructor(capGens = [LineSegmentsGeometry.roundCapStart, LineSegmentsGeometry.roundCapEnd]) {
     super();
     this.isLineSegmentsGeometry = true;
     this.type = 'LineSegmentsGeometry';
@@ -39,43 +121,8 @@ class LineSegmentsGeometry extends InstancedBufferGeometry {
     	-0.1, 1, 
     ];
 
-    const capResolution = 8
-	for (let step = 0; step < capResolution; step++) {
-      const theta0 = Math.PI / 2 + ((step + 0) * Math.PI) / capResolution;
-      const theta1 = Math.PI / 2 + ((step + 1) * Math.PI) / capResolution;
-      uvs.push(-.1+0,0);
-      uvs.push(-.1+r * Math.cos(theta0),r * Math.sin(theta0));
-      uvs.push(-.1+r * Math.cos(theta1),r * Math.sin(theta1));
-      positions.push(0, 0, 0);
-      positions.push(
-        r * thickness* Math.cos(theta0),
-        r * thickness* Math.sin(theta0),
-        0
-      );
-      positions.push(
-        r * thickness* Math.cos(theta1),
-        r * thickness* Math.sin(theta1),
-        0
-      );
-    }
-    // Add the right cap.
-    for (let step = 0; step < capResolution; step++) {
-      const theta0 = (3 * Math.PI) / 2 + ((step + 0) * Math.PI) / capResolution;
-      const theta1 = (3 * Math.PI) / 2 + ((step + 1) * Math.PI) / capResolution;
-      uvs.push(0.1+0,0);
-      uvs.push(0.1+r * Math.cos(theta0),r * Math.sin(theta0));
-      uvs.push(0.1+r * Math.cos(theta1),r * Math.sin(theta1));
-      positions.push(0, 0, 1);
-      positions.push(
-        r * thickness* Math.cos(theta0),
-        r * thickness* Math.sin(theta0),
-        1
-      );
-      positions.push(
-        r * thickness* Math.cos(theta1),
-        r * thickness* Math.sin(theta1),
-        1
-      );
+    for(let gen of capGens) {
+    	gen(positions, uvs, r, thickness)
     }
 
     this.setAttribute('position', new Float32BufferAttribute(positions, 3));

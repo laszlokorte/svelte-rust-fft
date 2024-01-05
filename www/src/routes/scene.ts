@@ -10,16 +10,17 @@ export const createScene = (el : HTMLCanvasElement) => {
 
   const labelsTextures = ["Re","Im","t"].map((l) => {
     const ctx = document.createElement('canvas').getContext('2d');
-    ctx.canvas.width = 64;
-    ctx.canvas.height = 64;
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    ctx.textAlign = "center"; 
-    ctx.fillStyle = '#fff';
-    ctx.font ="50px Arial"
-    ctx.fillText(l,32,40)
-
-    return new THREE.CanvasTexture(ctx.canvas);
+    if(ctx) {
+      ctx.canvas.width = 256;
+      ctx.canvas.height = 256;
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      ctx.textAlign = "center"; 
+      ctx.fillStyle = '#fff';
+      ctx.font ="150px monospace"
+      ctx.fillText(l,ctx.canvas.width/2,ctx.canvas.height/2)
+      return new THREE.CanvasTexture(ctx.canvas);
+    }
   })
 
   const scene = new THREE.Scene();
@@ -61,7 +62,7 @@ export const createScene = (el : HTMLCanvasElement) => {
   ]);
 
     
-   const curveGeo = new LineSegmentsGeometry(true);
+   const curveGeo = new LineSegmentsGeometry();
 
    curveGeo.setPositions([0,0,0,0,0,0]);
    curveGeo.addGroup(0,Infinity, 0)
@@ -72,7 +73,7 @@ export const createScene = (el : HTMLCanvasElement) => {
 
 
 
-    const axisGeo = new LineSegmentsGeometry();
+    const axisGeo = new LineSegmentsGeometry([LineSegmentsGeometry.roundCapStart, LineSegmentsGeometry.arrowCapEnd]);
     axisGeo.setPositions([
       -2.8,0,0,
       2.8,0,0,
@@ -203,6 +204,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     labelMatX.alphaMap = labelsTextures[0]
     labelMatX.transparent = true
     labelMatX.stencilFunc = THREE.EqualStencilFunc;
+    labelMatX.depthTest = false;
     labelMatX.depthWrite = false;
 
     const labelMatY = new THREE.MeshBasicMaterial({ color: 0x000000 });
@@ -211,7 +213,8 @@ export const createScene = (el : HTMLCanvasElement) => {
     labelMatY.alphaMap = labelsTextures[1]
     labelMatY.transparent = true
     labelMatY.stencilFunc = THREE.EqualStencilFunc;
-    labelMatY.depthWrite = false;
+    labelMatY.depthTest = false;
+    labelMatX.depthWrite = false;
 
     const labelMatZ = new THREE.MeshBasicMaterial({ color: 0x000000 });
     labelMatZ.stencilWrite = true;
@@ -219,23 +222,24 @@ export const createScene = (el : HTMLCanvasElement) => {
     labelMatZ.alphaMap = labelsTextures[2]
     labelMatZ.transparent = true
     labelMatZ.stencilFunc = THREE.EqualStencilFunc;
-    labelMatZ.depthWrite = false;
+    labelMatZ.depthTest = false;
+    labelMatX.depthWrite = false;
 
     const xLabel = new THREE.Mesh(labelGeo, labelMatX);
-    xLabel.renderOrder = i*2+15
+    xLabel.renderOrder = i*2+150
     xLabel.position.x = 3.2;
     xLabel.scale.y = 1/0.7;
     labels.push(xLabel)
 
 
     const yLabel = new THREE.Mesh(labelGeo, labelMatY);
-    yLabel.renderOrder = i*2+15
+    yLabel.renderOrder = i*2+150
     yLabel.position.y = 3.2;
     yLabel.scale.y = 1/0.7;
     labels.push(yLabel)
 
     const zLabel = new THREE.Mesh(labelGeo, labelMatZ);
-    zLabel.renderOrder = i*2+15
+    zLabel.renderOrder = i*2+150
     zLabel.position.z = -5.2;
     zLabel.scale.y = 1/0.7;
     labels.push(zLabel)
