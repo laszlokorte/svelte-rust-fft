@@ -317,6 +317,7 @@ export const createScene = (el : HTMLCanvasElement) => {
       // color: color & 0b00000000_01000000_01000000_01000000 | 0b00000000_10111111_10111111_10111111,
       color: color&0xa0a0a0| 0x070707,
       linewidth: 3.2, // in world units with size attenuation, pixels otherwise
+      lineovershoot: 1, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       dashed: false,
       alphaToCoverage: true,
@@ -340,6 +341,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     const shadow1 = new LineMaterial({
       color: color & 0b00000000_01110000_01110000_01110000,
       linewidth: 1.5, // in world units with size attenuation, pixels otherwise
+      lineovershoot: 1,
       vertexColors: false,
       dashed: false,
       alphaToCoverage: false,
@@ -364,6 +366,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     const shadow2 = new LineMaterial({
       color: color & 0b00000000_01110000_01110000_01110000,
       linewidth: 1.5, // in world units with size attenuation, pixels otherwise
+      lineovershoot: 1,
       vertexColors: false,
       dashed: false,
       alphaToCoverage: false,
@@ -387,6 +390,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     const shadow3 = new LineMaterial({
       color: color & 0b00000000_01110000_01110000_01110000,
       linewidth: 1.5, // in world units with size attenuation, pixels otherwise
+      lineovershoot: 1,
       vertexColors: false,
       dashed: false,
       alphaToCoverage: false,
@@ -411,6 +415,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     const shadow4 = new LineMaterial({
       color: color & 0b00000000_01110000_01110000_01110000,
       linewidth: 1.5, // in world units with size attenuation, pixels otherwise
+      lineovershoot: 1,
       vertexColors: false,
       dashed: false,
       alphaToCoverage: false,

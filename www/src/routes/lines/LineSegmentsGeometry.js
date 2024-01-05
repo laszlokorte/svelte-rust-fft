@@ -17,7 +17,18 @@ class LineSegmentsGeometry extends InstancedBufferGeometry {
     this.isLineSegmentsGeometry = true;
     this.type = 'LineSegmentsGeometry';
     const r = 1;
-    const positions = [-r, -r, 0, r, -r, 1, r, r, 1, -r, -r, 0, r, r, 1, -r, r, 0, ];
+    const thickness = 1
+    const overhang = 1
+    const interp = 1
+
+    const positions = [
+    	-r*overhang, -r*thickness, 0*interp, 
+    	+r*overhang, -r*thickness, 1*interp, 
+    	+r*overhang, +r*thickness, 1*interp, 
+    	-r*overhang, -r*thickness, 0*interp, 
+    	+r*overhang, +r*thickness, 1*interp, 
+    	-r*overhang, +r*thickness, 0*interp, 
+    ];
     const uvs = [-0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, ];
     const index = [0, 1, 2, 3, 4, 5, 6];
     this.setIndex(index);

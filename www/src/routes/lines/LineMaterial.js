@@ -2,6 +2,7 @@
  * parameters = {
  *  color: <hex>,
  *  linewidth: <float>,
+ *  lineovershoot: <float>,
  *  dashed: <boolean>,
  *  dashScale: <float>,
  *  dashSize: <float>,
@@ -40,6 +41,9 @@ UniformsLib.line = {
   linewidth: {
     value: 1
   },
+  lineovershoot: {
+    value: 0
+  },
   resolution: {
     value: new Vector2(1, 1)
   },
@@ -72,6 +76,7 @@ ShaderLib['line'] = {
 		#include <clipping_planes_pars_vertex>
 
 		uniform float linewidth;
+		uniform float lineovershoot;
 		uniform vec2 resolution;
 
 		#ifdef LINEAR_PROJECTION
@@ -171,7 +176,7 @@ ShaderLib['line'] = {
 
 			#else
 
-				vUv = uv;
+				vUv = uv * (1.0+lineovershoot);
 
 			#endif
 
@@ -252,47 +257,6 @@ ShaderLib['line'] = {
 
 			#else
 
-				vec2 offset = vec2(dir.y, - dir.x);
-				// undo aspect ratio adjustment
-				dir.x /= aspect;
-				offset.x /= aspect;
-
-				// sign flip
-				if (position.x < 0.0) offset *= - 1.0;
-
-				// endcaps
-				if (position.y < 0.0) {
-
-					offset += - dir;
-
-				} else if (position.y > 1.0) {
-
-					offset += dir;
-
-				}
-
-				// adjust for linewidth
-				offset *= linewidth;
-
-			
-				// adjust for clip-space to screen-space conversion // maybe resolution should be based on viewport ...
-				offset /= resolution.y;
-
-				// select end
-				vec4 clip = (position.y < 0.5) ? clipStart : clipEnd;
-
-				// back to clip space
-				offset *= clip.w;
-
-				#ifdef VARY_WIDTH
-				offset *= ((position.y < 0.5) ? instanceWidthStart : instanceWidthEnd);
-				#endif
-
-
-				clip.xy += offset;
-
-
-
 				#ifdef VARY_WIDTH
 				float startWidth = linewidth * instanceWidthStart;
 				float endWidth = linewidth * instanceWidthEnd;
@@ -304,15 +268,18 @@ ShaderLib['line'] = {
 				vec2 screenStart = resolution * (0.5 * clipStart.xy/clipStart.w + 0.5);
 				vec2 screenEnd = resolution * (0.5 * clipEnd.xy/clipEnd.w + 0.5);
 				vec2 xBasis = normalize(screenEnd - screenStart);
-				if(actualStart==actualEnd) {
-					xBasis = vec2(1.0,0.0);
-				}
 				vec2 yBasis = vec2(-xBasis.y, xBasis.x);
-				vec2 pt0 = screenStart + startWidth * (position.x * xBasis + position.y * yBasis);
-				vec2 pt1 = screenEnd + endWidth * (position.x * xBasis + position.y * yBasis);
+
+				if(actualStart==actualEnd) {
+					yBasis = vec2(1.0,0.0);
+					xBasis = vec2(0.0,-1.0);
+				}
+
+				vec2 pt0 = screenStart + startWidth * (position.y * yBasis + lineovershoot * position.x * xBasis);
+				vec2 pt1 = screenEnd + endWidth * (position.y * yBasis + lineovershoot * position.x * xBasis);
 				vec2 pt = mix(pt0, pt1, position.z);
 				vec4 clipMix = mix(clipStart, clipEnd, position.z);
-				clip = vec4(clipMix.w * (2.0 * pt/resolution - 1.0), clipMix.z, clipMix.w);
+				vec4 clip = vec4(clipMix.w * (2.0 * pt/resolution - 1.0), clipMix.z, clipMix.w);
 
 			#endif
 
@@ -527,6 +494,17 @@ class LineMaterial extends ShaderMaterial {
   get linewidth() {
     return this.uniforms.linewidth.value;
   }
+  set linewidth(value) {
+    if (!this.uniforms.linewidth) return;
+    this.uniforms.linewidth.value = value;
+  }
+  get lineovershoot() {
+    return this.uniforms.lineovershoot.value;
+  }
+  set lineovershoot(value) {
+    if (!this.uniforms.lineovershoot) return;
+    this.uniforms.lineovershoot.value = value;
+  }
   set startProjectionMul(v) {
     this.uniforms.startProjectionMul.value.copy(v)
   }
@@ -550,10 +528,6 @@ class LineMaterial extends ShaderMaterial {
   }
   get endProjectionAdd() {
     return this.uniforms.endProjectionAdd
-  }
-  set linewidth(value) {
-    if (!this.uniforms.linewidth) return;
-    this.uniforms.linewidth.value = value;
   }
   get dashed() {
     return 'USE_DASH' in this.defines;
