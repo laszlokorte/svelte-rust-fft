@@ -542,7 +542,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     const newLength = camera.position.length()
 
 
-    if(newLength < 7 && currentFocus === null) {
+    if(newLength < 8 && currentFocus === null) {
       focusSide(indexOfSmallest(refRotations.map((x) => x.dot(new THREE.Vector3(1,1/stretchHeight,1).multiply(camera.position)))))
     } else if(newLength > 8 && currentFocus === indexOfSmallest(refRotations.map((x) => x.dot(new THREE.Vector3(1,1/stretchHeight,1).multiply(camera.position))))) {
       focusSide(null)
