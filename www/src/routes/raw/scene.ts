@@ -3,8 +3,24 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls';
 import {LineSegments2} from './lines/LineSegments2.js'
 import {LineMaterial} from './lines/LineMaterial.js'
 import {LineSegmentsGeometry} from './lines/LineSegmentsGeometry.js'
+import { DecalGeometry } from 'three/addons/geometries/DecalGeometry';
 
 export const createScene = (el : HTMLCanvasElement) => {
+
+
+  const labelsTextures = ["Re","Im","t"].map((l) => {
+    const ctx = document.createElement('canvas').getContext('2d');
+    ctx.canvas.width = 64;
+    ctx.canvas.height = 64;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.textAlign = "center"; 
+    ctx.fillStyle = '#fff';
+    ctx.font ="50px Arial"
+    ctx.fillText(l,32,40)
+
+    return new THREE.CanvasTexture(ctx.canvas);
+  })
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 1000);
@@ -14,6 +30,7 @@ export const createScene = (el : HTMLCanvasElement) => {
   boxGeoX.addGroup(6,Infinity, 1)
 
   const boxGeo = new THREE.BoxGeometry();
+  const labelGeo = new THREE.PlaneGeometry(.3,.3);
   const light = new THREE.AmbientLight("white", 4);
 
   const stretchHeight = 0.5
@@ -95,6 +112,7 @@ export const createScene = (el : HTMLCanvasElement) => {
   const axees = []
 
   let cubeSides = []
+  let labels = []
   let sides = new THREE.Group();
 
   let i = 1;
@@ -192,8 +210,56 @@ export const createScene = (el : HTMLCanvasElement) => {
     axis.renderOrder = i*2+5
     axisMaterial.depthTest = true
 
-    if(showAxis)
+    const labelMatX = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    labelMatX.varyWidth = true;
+    labelMatX.stencilWrite = true;
+    labelMatX.stencilRef = i;
+    labelMatX.alphaMap = labelsTextures[0]
+    labelMatX.transparent = true
+    labelMatX.stencilFunc = THREE.EqualStencilFunc;
+
+    const labelMatY = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    labelMatY.varyWidth = true;
+    labelMatY.stencilWrite = true;
+    labelMatY.stencilRef = i;
+    labelMatY.alphaMap = labelsTextures[1]
+    labelMatY.transparent = true
+    labelMatY.stencilFunc = THREE.EqualStencilFunc;
+
+    const labelMatZ = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    labelMatZ.varyWidth = true;
+    labelMatZ.stencilWrite = true;
+    labelMatZ.stencilRef = i;
+    labelMatZ.alphaMap = labelsTextures[2]
+    labelMatZ.transparent = true
+    labelMatZ.stencilFunc = THREE.EqualStencilFunc;
+
+    const xLabel = new THREE.Mesh(labelGeo, labelMatX);
+    xLabel.renderOrder = i*2+5
+    xLabel.position.x = 3.2;
+    xLabel.scale.y = 1/0.7;
+    labels.push(xLabel)
+
+
+    const yLabel = new THREE.Mesh(labelGeo, labelMatY);
+    yLabel.renderOrder = i*2+5
+    yLabel.position.y = 3.2;
+    yLabel.scale.y = 1/0.7;
+    labels.push(yLabel)
+
+    const zLabel = new THREE.Mesh(labelGeo, labelMatZ);
+    zLabel.renderOrder = i*2+5
+    zLabel.position.z = -5.2;
+    zLabel.scale.y = 1/0.7;
+    labels.push(zLabel)
+
+    if(showAxis) {
+      axis.add(xLabel)
+      axis.add(yLabel)
+      axis.add(zLabel)
+
       graph.add(axis)
+    }
 
     //graph.position.x = 8
     lineMats.push(axisMaterial)
@@ -396,7 +462,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     curveShadows.rotation.y = -curveRot
 
     sides.add(sideOuter);
-    cubeSides.push({curveDots, curveBars, sideOuter, cubeMaterial, face, shadow1, shadow2, shadow3, shadow4, curveBarMaterial, windowMaterial, curveDotMaterial, axisMaterial,outlineMat})
+    cubeSides.push({labelMatX,labelMatY,labelMatZ,curveDots, curveBars, sideOuter, cubeMaterial, face, shadow1, shadow2, shadow3, shadow4, curveBarMaterial, windowMaterial, curveDotMaterial, axisMaterial,outlineMat})
   }
   
   let currentFocus = null
@@ -415,6 +481,9 @@ export const createScene = (el : HTMLCanvasElement) => {
       cubeSides[s].shadow2.stencilRef = s+2
       cubeSides[s].shadow3.stencilRef = s+2
       cubeSides[s].shadow4.stencilRef = s+2
+      cubeSides[s].labelMatX.stencilRef = s+2
+      cubeSides[s].labelMatY.stencilRef = s+2
+      cubeSides[s].labelMatZ.stencilRef = s+2
     }
 
     if(focus!=null) {
@@ -430,6 +499,9 @@ export const createScene = (el : HTMLCanvasElement) => {
       cubeSides[focus].shadow2.stencilRef = 0
       cubeSides[focus].shadow3.stencilRef = 0
       cubeSides[focus].shadow4.stencilRef = 0
+      cubeSides[focus].labelMatX.stencilRef = 0
+      cubeSides[focus].labelMatY.stencilRef = 0
+      cubeSides[focus].labelMatZ.stencilRef = 0
 
       socket.visible = false
 
@@ -496,9 +568,14 @@ export const createScene = (el : HTMLCanvasElement) => {
    return lowest;
   }
 
+  const labelVec = new THREE.Vector3();
   const animate = () => {
     controls.update();
     dirLight.position.copy(camera.position).sub(new THREE.Vector3(5,-15,1))
+
+    for(let label of labels) {
+      label.lookAt(camera.getWorldPosition(labelVec))
+    }
 
     renderer.render(scene, camera);
   };
