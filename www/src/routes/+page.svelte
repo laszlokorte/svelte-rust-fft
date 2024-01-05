@@ -1,81 +1,117 @@
 <svelte:head>
-	<title>Discrete Fourier Transform in Svelte+ThreeJS+Rust+WASM</title>
+	<title>Fourier Cube</title>
 </svelte:head>
 
-<script lang="ts">
-	import { Canvas } from '@threlte/core'
-	import Scene from './Scene.svelte'
-	import * as fft from "fftwasm";
-	import {memory} from "fftwasm/fftwasm_bg.wasm";
+<script>
+  import { onMount } from 'svelte';
+  import { createScene } from "./scene";
+  
+  let el;
+  let scene = null
+  let fraction = 0
+  let freq = 1
+  let phase = 0
+  let amplitude = 1
+  let samples = 512
 
-	let cssTarget = null
+  $: if(scene) {
+  	scene.setFraction(fraction)
+  	scene.setSignal(Array(samples).fill(0).map((_,i) => [amplitude*Math.cos(Math.PI*4*(freq*(i/samples-0.5)+phase)), amplitude*Math.sin(Math.PI*4*(freq*(i/samples-0.5)+phase))]))
+  }
 
-	let signal = fft.Signal.new(2048)
+  onMount(() => {
+    scene = createScene(el)
 
-	let freq = 5;
-	let phase = 0;
-	let ampl = 1;
-	
-	let times = new Float32Array(memory.buffer, signal.get_time(), signal.get_len()*2);
-	let freqs = new Float32Array(memory.buffer, signal.get_freq(), signal.get_len()*2);
-
-	$: {
-		signal.set_sin(freq, phase, ampl)
-		times = new Float32Array(memory.buffer, signal.get_time(), signal.get_len()*2);
-		freqs = new Float32Array(memory.buffer, signal.get_freq(), signal.get_len()*2);
-	}
+    return scene.dispose
+  });
 </script>
 
 <style>
-	.scene-container {
-		position: absolute;
-		inset: 0;
-		display: grid;
-		grid-template: 1fr;
-		background: #111;
-		color: #fff;
+	:global(body) {
+		margin: 0;
 	}
 
-	.scene-container > :global(*) {
-		grid-area: 1 / 1;
+	.canvas {
+		position: absolute;
+		inset: 0;
+		display: block;
+	}
+
+	.container {
+		position: absolute;
+		inset: 0;
+		display: block;
+		display: grid;
+		grid-template: 1fr;
+		background: #dffaff;
 	}
 
 	.controls {
+		width: min-content;
 		z-index: 10;
-		max-width: min-content;
+		background: #333a;
+		color: #fff;
+		align-self: start;
+		justify-self: start;
 		margin: 1em;
+		padding: 1em;
+		font-family: monospace;
+		font-size: 1.2em;
 	}
 
-	.css-canvas {
-		pointer-events: none;
-		position: absolute;
-		inset: 0;
+	fieldset {
+		border: none;
+		margin: 0.5em 1em;
+		padding: 0;
+	}
+
+	legend {
+		font-weight: bold;
+		background: #333;
+		margin: 0 0 1em 0;
+		padding: 2px 4px;
+	}
+
+	input {
+		accent-color: white;
 	}
 </style>
 
-<div class="scene-container">
-  <Canvas>
-    <Scene cssTarget={cssTarget} times={times} freqs={freqs} />
-  </Canvas>
+<div class="container">
+	<canvas class="canvas" bind:this={el}></canvas>
+	<div class="controls">
+		<fieldset>
+			<legend>Controls</legend>
 
-  <div bind:this={cssTarget} class="css-canvas"></div>
+			<label>Samples: <input list="sample-list" type="range" min="16" max="512" step="1" bind:value={samples} name=""></label>
+			<label>Amplitude: <input list="ampl-list" type="range" min="0" max="2" step="0.01" bind:value={amplitude} name=""></label>
+			<label>Frequency: <input list="freq-list" type="range" min="-4" max="4" step="0.01" bind:value={freq} name=""></label>
+			<label>Phase: <input list="phase-list" type="range" min="-0.5" max="0.5" step="0.01" bind:value={phase} name=""></label>
+			<label>Fractional Transform: <input list="frac-list" type="range" min="-4" max="3" step="0.1" bind:value={fraction} name=""></label>
 
-  <nav class="controls">
-  	<fieldset>
-  		<legend>Controls</legend>
+			<datalist id="sample-list">
+				<option>8</option>
+				<option>256</option>
+			</datalist>
 
-  		<label>
-  			Frequency:
-  			<input type="range" min="-100" max="100" step="1" bind:value={freq} name="frequency">
-  		</label>
-  		<label>
-  			Phase:
-  			<input type="range" min="-1" max="1" step="0.01" bind:value={phase} name="phase">
-  		</label>
-  		<label>
-  			Amplitude:
-  			<input type="range" min="-5" max="5" step="0.1" bind:value={ampl} name="ampl">
-  		</label>
-  	</fieldset>
-  </nav>
+			<datalist id="ampl-list">
+				<option>0</option>
+				<option>1</option>
+			</datalist>
+
+			<datalist id="freq-list">
+				<option>0</option>
+				<option>1</option>
+			</datalist>
+			<datalist id="phase-list">
+				<option>0</option>
+			</datalist>
+			<datalist id="frac-list">
+				<option>-1</option>
+				<option>-2</option>
+				<option>-3</option>
+				<option>-4</option>
+			</datalist>
+		</fieldset>
+	</div>
 </div>

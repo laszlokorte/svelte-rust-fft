@@ -304,7 +304,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     });
 
 
-    curveBarMaterial.opacity = 0.7;
+    curveBarMaterial.opacity = 0.5;
     curveBarMaterial.stencilWrite = true;
     curveBarMaterial.stencilRef = i;
     curveBarMaterial.stencilFunc = THREE.EqualStencilFunc;
@@ -473,7 +473,7 @@ export const createScene = (el : HTMLCanvasElement) => {
       cubeSides[s].cubeMaterial.stencilRef = s+2
       cubeSides[s].windowMaterial.stencilRef = s+2
       cubeSides[s].curveBarMaterial.stencilRef = s+2
-      cubeSides[s].curveBarMaterial.opacity = (focus!=null ? 0.5 : 0.2)
+      cubeSides[s].curveBars.visible = (focus!=null)
       cubeSides[s].curveDotMaterial.stencilRef = s+2
       cubeSides[s].axisMaterial.stencilRef = s+2
       cubeSides[s].outlineMat.stencilRef = s+2
