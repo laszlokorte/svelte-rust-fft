@@ -174,7 +174,7 @@ export const createScene = (el : HTMLCanvasElement) => {
 
     const axisMaterial = new LineMaterial({
       color: color & 0b00000000_00010111_00010111_00010111,
-      linewidth: 1, // in world units with size attenuation, pixels otherwise
+      linewidth: 0.7, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       dashed: false,
       alphaToCoverage: true,
@@ -281,7 +281,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     const curveBarMaterial = new LineMaterial({
       // color: color & 0b00000000_01000000_01000000_01000000 | 0b00000000_10111111_10111111_10111111,
       color: color| 0xffffff,
-      linewidth: 2, // in world units with size attenuation, pixels otherwise
+      linewidth: 1, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       dashed: false,
       alphaToCoverage: true,
@@ -291,7 +291,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     });
 
 
-    curveBarMaterial.opacity = 0.5;
+    curveBarMaterial.opacity = 0.7;
     curveBarMaterial.stencilWrite = true;
     curveBarMaterial.stencilRef = i;
     curveBarMaterial.stencilFunc = THREE.EqualStencilFunc;
@@ -316,8 +316,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     const curveDotMaterial = new LineMaterial({
       // color: color & 0b00000000_01000000_01000000_01000000 | 0b00000000_10111111_10111111_10111111,
       color: color&0xa0a0a0| 0x070707,
-      linewidth: 3.2, // in world units with size attenuation, pixels otherwise
-      lineovershoot: 1, // in world units with size attenuation, pixels otherwise
+      linewidth: 2.2, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       dashed: false,
       alphaToCoverage: true,
@@ -331,6 +330,11 @@ export const createScene = (el : HTMLCanvasElement) => {
     curveDotMaterial.stencilWrite = true;
     curveDotMaterial.stencilRef = i;
     curveDotMaterial.stencilFunc = THREE.EqualStencilFunc;
+    // curveDotMaterial.linearProjection = true;
+    // curveDotMaterial.startProjectionMul = new THREE.Vector3(1,1,1);
+    // curveDotMaterial.startProjectionAdd = new THREE.Vector3(0,0,0);
+    // curveDotMaterial.endProjectionMul = new THREE.Vector3(1,1,1);
+    // curveDotMaterial.endProjectionAdd = new THREE.Vector3(0,1,0);
 
     const curveDots = new LineSegments(curveGeo, curveDotMaterial);
     curveDots.computeLineDistances();
@@ -340,8 +344,7 @@ export const createScene = (el : HTMLCanvasElement) => {
 
     const shadow1 = new LineMaterial({
       color: color & 0b00000000_01110000_01110000_01110000,
-      linewidth: 1.5, // in world units with size attenuation, pixels otherwise
-      lineovershoot: 1,
+      linewidth: 1.0, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       dashed: false,
       alphaToCoverage: false,
@@ -365,8 +368,7 @@ export const createScene = (el : HTMLCanvasElement) => {
 
     const shadow2 = new LineMaterial({
       color: color & 0b00000000_01110000_01110000_01110000,
-      linewidth: 1.5, // in world units with size attenuation, pixels otherwise
-      lineovershoot: 1,
+      linewidth: 1.0, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       dashed: false,
       alphaToCoverage: false,
@@ -389,8 +391,7 @@ export const createScene = (el : HTMLCanvasElement) => {
 
     const shadow3 = new LineMaterial({
       color: color & 0b00000000_01110000_01110000_01110000,
-      linewidth: 1.5, // in world units with size attenuation, pixels otherwise
-      lineovershoot: 1,
+      linewidth: 1.0, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       dashed: false,
       alphaToCoverage: false,
@@ -414,8 +415,7 @@ export const createScene = (el : HTMLCanvasElement) => {
 
     const shadow4 = new LineMaterial({
       color: color & 0b00000000_01110000_01110000_01110000,
-      linewidth: 1.5, // in world units with size attenuation, pixels otherwise
-      lineovershoot: 1,
+      linewidth: 1.0, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       dashed: false,
       alphaToCoverage: false,

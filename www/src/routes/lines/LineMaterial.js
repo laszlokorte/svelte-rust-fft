@@ -2,7 +2,6 @@
  * parameters = {
  *  color: <hex>,
  *  linewidth: <float>,
- *  lineovershoot: <float>,
  *  dashed: <boolean>,
  *  dashScale: <float>,
  *  dashSize: <float>,
@@ -41,9 +40,6 @@ UniformsLib.line = {
   linewidth: {
     value: 1
   },
-  lineovershoot: {
-    value: 0
-  },
   resolution: {
     value: new Vector2(1, 1)
   },
@@ -76,7 +72,6 @@ ShaderLib['line'] = {
 		#include <clipping_planes_pars_vertex>
 
 		uniform float linewidth;
-		uniform float lineovershoot;
 		uniform vec2 resolution;
 
 		#ifdef LINEAR_PROJECTION
@@ -170,14 +165,10 @@ ShaderLib['line'] = {
 
 
 			#ifdef WORLD_UNITS
-
 				worldStart = start.xyz;
 				worldEnd = end.xyz;
-
 			#else
-
-				vUv = uv * (1.0+lineovershoot);
-
+				vUv = uv;
 			#endif
 
 			// special case for perspective projection, and segments that terminate either in, or behind, the camera plane
@@ -275,8 +266,8 @@ ShaderLib['line'] = {
 					xBasis = vec2(0.0,-1.0);
 				}
 
-				vec2 pt0 = screenStart + startWidth * (position.y * yBasis + lineovershoot * position.x * xBasis);
-				vec2 pt1 = screenEnd + endWidth * (position.y * yBasis + lineovershoot * position.x * xBasis);
+				vec2 pt0 = screenStart + startWidth * (position.y * yBasis + position.x * xBasis);
+				vec2 pt1 = screenEnd + endWidth * (position.y * yBasis + position.x * xBasis);
 				vec2 pt = mix(pt0, pt1, position.z);
 				vec4 clipMix = mix(clipStart, clipEnd, position.z);
 				vec4 clip = vec4(clipMix.w * (2.0 * pt/resolution - 1.0), clipMix.z, clipMix.w);
@@ -497,13 +488,6 @@ class LineMaterial extends ShaderMaterial {
   set linewidth(value) {
     if (!this.uniforms.linewidth) return;
     this.uniforms.linewidth.value = value;
-  }
-  get lineovershoot() {
-    return this.uniforms.lineovershoot.value;
-  }
-  set lineovershoot(value) {
-    if (!this.uniforms.lineovershoot) return;
-    this.uniforms.lineovershoot.value = value;
   }
   set startProjectionMul(v) {
     this.uniforms.startProjectionMul.value.copy(v)
