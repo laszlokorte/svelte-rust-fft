@@ -11,14 +11,14 @@ export const createScene = (el : HTMLCanvasElement) => {
   const labelsTextures = ["Re","Im","t"].map((l) => {
     const ctx = document.createElement('canvas').getContext('2d');
     if(ctx) {
-      ctx.canvas.width = 256;
-      ctx.canvas.height = 256;
+      ctx.canvas.width = 128;
+      ctx.canvas.height = 128;
       ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
       ctx.textAlign = "center"; 
       ctx.fillStyle = '#fff';
-      ctx.font ="150px monospace"
-      ctx.fillText(l,ctx.canvas.width/2,ctx.canvas.height/2)
+      ctx.font ="100px Georgia"
+      ctx.fillText(l,ctx.canvas.width/2,2*ctx.canvas.height/3)
       return new THREE.CanvasTexture(ctx.canvas);
     }
   })
@@ -55,10 +55,11 @@ export const createScene = (el : HTMLCanvasElement) => {
     5,5,5,5,-5,5,
   ]);
 
-  outlineGeo.setWidths([
-    1,1,1,10,
-    1,1,1,1,
-    1,1,1,1,1
+
+  const labelGeoNew = new LineSegmentsGeometry([LineSegmentsGeometry.squareCapStart(-3,3)]);
+  labelGeoNew.setPositions([
+    -0.1,0.0,0,
+    0,0.0,0
   ]);
 
     
@@ -81,8 +82,8 @@ export const createScene = (el : HTMLCanvasElement) => {
       0,-2.8,0,
       0,2.8,0,
 
-      0,0,4.8,
-      0,0,-4.8,
+      0,0,4.5,
+      0,0,-4.5,
     ]);
 
 
@@ -177,7 +178,6 @@ export const createScene = (el : HTMLCanvasElement) => {
       color: color & 0b00000000_00010111_00010111_00010111,
       linewidth: 0.7, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
-      dashed: false,
       alphaToCoverage: true,
       depthTest: true,
       depthWrite: true,
@@ -190,7 +190,6 @@ export const createScene = (el : HTMLCanvasElement) => {
     axisMaterial.stencilFunc = THREE.EqualStencilFunc;
 
     const axis = new LineSegments(axisGeo, axisMaterial);
-    axis.computeLineDistances();
     axis.scale.y = 0.7
 
     axees.push(graphOuter)
@@ -198,7 +197,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     axis.renderOrder = i*2+5
     axisMaterial.depthTest = true
 
-    const labelMatX = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    const labelMatX = new LineMaterial({ color: 0x000000 });
     labelMatX.stencilWrite = true;
     labelMatX.stencilRef = i;
     labelMatX.alphaMap = labelsTextures[0]
@@ -206,42 +205,45 @@ export const createScene = (el : HTMLCanvasElement) => {
     labelMatX.stencilFunc = THREE.EqualStencilFunc;
     labelMatX.depthTest = false;
     labelMatX.depthWrite = false;
+    labelMatX.linewidth = 6;
+    labelMatX.textured = true;
 
-    const labelMatY = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    const labelMatY = new LineMaterial({ color: 0x000000 });
     labelMatY.stencilWrite = true;
     labelMatY.stencilRef = i;
     labelMatY.alphaMap = labelsTextures[1]
     labelMatY.transparent = true
     labelMatY.stencilFunc = THREE.EqualStencilFunc;
     labelMatY.depthTest = false;
-    labelMatX.depthWrite = false;
+    labelMatY.depthWrite = false;
+    labelMatY.linewidth = 6;
+    labelMatY.textured= true;
 
-    const labelMatZ = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    const labelMatZ = new LineMaterial({ color: 0x000000 });
     labelMatZ.stencilWrite = true;
     labelMatZ.stencilRef = i;
     labelMatZ.alphaMap = labelsTextures[2]
     labelMatZ.transparent = true
     labelMatZ.stencilFunc = THREE.EqualStencilFunc;
     labelMatZ.depthTest = false;
-    labelMatX.depthWrite = false;
+    labelMatZ.depthWrite = false;
+    labelMatZ.linewidth = 6;
+    labelMatZ.textured = true;
 
-    const xLabel = new THREE.Mesh(labelGeo, labelMatX);
+    const xLabel = new LineSegments(labelGeoNew, labelMatX);
     xLabel.renderOrder = i*2+150
-    xLabel.position.x = 3.2;
-    xLabel.scale.y = 1/0.7;
+    xLabel.position.x = 2.8;
     labels.push(xLabel)
 
 
-    const yLabel = new THREE.Mesh(labelGeo, labelMatY);
+    const yLabel = new LineSegments(labelGeoNew, labelMatY);
     yLabel.renderOrder = i*2+150
-    yLabel.position.y = 3.2;
-    yLabel.scale.y = 1/0.7;
+    yLabel.position.y = 2.8;
     labels.push(yLabel)
 
-    const zLabel = new THREE.Mesh(labelGeo, labelMatZ);
+    const zLabel = new LineSegments(labelGeoNew, labelMatZ);
     zLabel.renderOrder = i*2+150
-    zLabel.position.z = -5.2;
-    zLabel.scale.y = 1/0.7;
+    zLabel.position.z = -4.5;
     labels.push(zLabel)
 
     if(showAxis) {
@@ -255,12 +257,12 @@ export const createScene = (el : HTMLCanvasElement) => {
     //graph.position.x = 8
     lineMats.push(axisMaterial)
 
+    lineMats.push(labelMatX, labelMatY, labelMatZ)
 
     const outlineMat = new LineMaterial({
       color: color & line_color_mask_sub | line_color_mask_add,
       linewidth: 0.7, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
-      dashed: false,
       alphaToCoverage: true,
     });
 
@@ -273,7 +275,6 @@ export const createScene = (el : HTMLCanvasElement) => {
     lineMats.push(outlineMat)
 
     const outline = new LineSegments(outlineGeo, outlineMat);
-    outline.computeLineDistances();
 
     outline.renderOrder = i*2+1
 
@@ -287,7 +288,6 @@ export const createScene = (el : HTMLCanvasElement) => {
       color: color| 0xffffff,
       linewidth: 1, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
-      dashed: false,
       alphaToCoverage: true,
       transparent: true,
       depthTest: true,
@@ -299,14 +299,13 @@ export const createScene = (el : HTMLCanvasElement) => {
     curveBarMaterial.stencilWrite = true;
     curveBarMaterial.stencilRef = i;
     curveBarMaterial.stencilFunc = THREE.EqualStencilFunc;
-    curveBarMaterial.linearProjection = true;
+    curveBarMaterial.linearProjected = true;
     curveBarMaterial.startProjectionMul = new THREE.Vector3(0,0,1);
     curveBarMaterial.startProjectionAdd = new THREE.Vector3(0,0,0);
     curveBarMaterial.endProjectionMul = new THREE.Vector3(1,1,1);
     curveBarMaterial.endProjectionAdd = new THREE.Vector3(0,0,0);
 
     const curveBars = new LineSegments(curveGeo, curveBarMaterial);
-    curveBars.computeLineDistances();
 
     curveBars.renderOrder = i*2+6
     graph.add(curveBars)
@@ -322,11 +321,10 @@ export const createScene = (el : HTMLCanvasElement) => {
       color: color&0xa0a0a0| 0x070707,
       linewidth: 2.2, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
-      dashed: false,
       alphaToCoverage: true,
       transparent: true,
       depthTest: true,
-      depthWrite: false
+      depthWrite: false,
     });
 
     lineMats.push(curveDotMaterial)
@@ -334,14 +332,13 @@ export const createScene = (el : HTMLCanvasElement) => {
     curveDotMaterial.stencilWrite = true;
     curveDotMaterial.stencilRef = i;
     curveDotMaterial.stencilFunc = THREE.EqualStencilFunc;
-    // curveDotMaterial.linearProjection = true;
+    // curveDotMaterial.linearProjected = true;
     // curveDotMaterial.startProjectionMul = new THREE.Vector3(1,1,1);
     // curveDotMaterial.startProjectionAdd = new THREE.Vector3(0,0,0);
     // curveDotMaterial.endProjectionMul = new THREE.Vector3(1,1,1);
     // curveDotMaterial.endProjectionAdd = new THREE.Vector3(0,1,0);
 
     const curveDots = new LineSegments(curveGeo, curveDotMaterial);
-    curveDots.computeLineDistances();
 
     curveDots.renderOrder = i*2+7
     graph.add(curveDots)
@@ -350,7 +347,6 @@ export const createScene = (el : HTMLCanvasElement) => {
       color: color & 0b00000000_01110000_01110000_01110000,
       linewidth: 1.0, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
-      dashed: false,
       alphaToCoverage: false,
       depthTest: false,
       depthWrite: false,
@@ -363,7 +359,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     shadow1.stencilWrite = true;
     shadow1.stencilRef = i;
     shadow1.stencilFunc = THREE.EqualStencilFunc;
-    shadow1.linearProjection = true;
+    shadow1.linearProjected = true;
     shadow1.startProjectionMul = new THREE.Vector3(0,1,1);
     shadow1.startProjectionAdd = new THREE.Vector3(-5,0,0).applyEuler(new THREE.Euler(0,curveRot,0));
     shadow1.endProjectionMul = new THREE.Vector3(0,1,1);
@@ -374,7 +370,6 @@ export const createScene = (el : HTMLCanvasElement) => {
       color: color & 0b00000000_01110000_01110000_01110000,
       linewidth: 1.0, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
-      dashed: false,
       alphaToCoverage: false,
       depthTest: false,
       depthWrite: false,
@@ -387,7 +382,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     shadow2.stencilWrite = true;
     shadow2.stencilRef = i;
     shadow2.stencilFunc = THREE.EqualStencilFunc;
-    shadow2.linearProjection = true;
+    shadow2.linearProjected = true;
     shadow2.startProjectionMul = new THREE.Vector3(1,0,1);
     shadow2.startProjectionAdd = new THREE.Vector3(0,-5*stretchHeight,0);
     shadow2.endProjectionMul = new THREE.Vector3(1,0,1);
@@ -397,7 +392,6 @@ export const createScene = (el : HTMLCanvasElement) => {
       color: color & 0b00000000_01110000_01110000_01110000,
       linewidth: 1.0, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
-      dashed: false,
       alphaToCoverage: false,
       depthTest: false,
       depthWrite: false,
@@ -410,7 +404,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     shadow3.stencilWrite = true;
     shadow3.stencilRef = i;
     shadow3.stencilFunc = THREE.EqualStencilFunc;
-    shadow3.linearProjection = true;
+    shadow3.linearProjected = true;
     shadow3.startProjectionMul = new THREE.Vector3(1,1,0);
     shadow3.startProjectionAdd = new THREE.Vector3(0,0,5);
     shadow3.endProjectionMul = new THREE.Vector3(1,1,0);
@@ -421,7 +415,6 @@ export const createScene = (el : HTMLCanvasElement) => {
       color: color & 0b00000000_01110000_01110000_01110000,
       linewidth: 1.0, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
-      dashed: false,
       alphaToCoverage: false,
       depthTest: false,
       depthWrite: false,
@@ -434,15 +427,13 @@ export const createScene = (el : HTMLCanvasElement) => {
     shadow4.stencilWrite = true;
     shadow4.stencilRef = i;
     shadow4.stencilFunc = THREE.EqualStencilFunc;
-    shadow4.linearProjection = true;
+    shadow4.linearProjected = true;
     shadow4.startProjectionMul = new THREE.Vector3(1,1,0);
     shadow4.startProjectionAdd = new THREE.Vector3(0,0,-5);
     shadow4.endProjectionMul = new THREE.Vector3(1,1,0);
     shadow4.endProjectionAdd = new THREE.Vector3(0,0,-5);
 
-
     const curveShadows = new LineSegments(curveGeo, [shadow1, shadow2, shadow3, shadow4]);
-    curveShadows.computeLineDistances();
 
     curveShadows.renderOrder = i*2+1
     if(shadow)
@@ -534,7 +525,7 @@ export const createScene = (el : HTMLCanvasElement) => {
   socketMat.stencilZPass = THREE.ReplaceStencilOp;
 
   const socket = new THREE.Mesh(socketGeo, socketMat);
-  socket.position.y=-5*stretchHeight-0.105
+  socket.position.y=-5*stretchHeight-0.11
   socket.renderOrder = 10000
   scene.add(socket);
 

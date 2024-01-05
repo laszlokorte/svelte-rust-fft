@@ -34,6 +34,25 @@ class LineSegmentsGeometry extends InstancedBufferGeometry {
     }
   }
 
+  static squareCapStart = (xoff,yoff) => (positions, uvs, r, thickness) => {
+  	positions.push(...[
+    	xoff + -2*r, yoff + -r*thickness, 1, 
+    	xoff + +2*r, yoff + -r*thickness, 1, 
+    	xoff + +2*r, yoff + r*thickness, 1, 
+    	xoff + -2*r, yoff + -r*thickness, 1, 
+    	xoff + +2*r, yoff + r*thickness, 1, 
+    	xoff + -2*r, yoff + +r*thickness, 1, 
+    ])
+  	uvs.push(...[
+    	0+1,0+1,
+    	1+1,0+1,
+    	1+1,1+1,
+    	0+1,0+1,
+    	1+1,1+1,
+    	0+1,1+1,
+    ])
+  }
+
   static roundCapEnd = (positions, uvs, r, thickness) => {
   	const capResolution = 8
     for (let step = 0; step < capResolution; step++) {
