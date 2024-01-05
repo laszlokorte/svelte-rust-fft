@@ -534,7 +534,7 @@ export const createScene = (el : HTMLCanvasElement) => {
   socketMat.stencilZPass = THREE.ReplaceStencilOp;
 
   const socket = new THREE.Mesh(socketGeo, socketMat);
-  socket.position.y=-5*stretchHeight-0.11
+  socket.position.y=-5*stretchHeight-0.105
   socket.renderOrder = 10000
   scene.add(socket);
 
