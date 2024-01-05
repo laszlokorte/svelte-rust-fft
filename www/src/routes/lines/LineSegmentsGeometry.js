@@ -14,26 +14,32 @@ const _vector = new Vector3();
 
 class LineSegmentsGeometry extends InstancedBufferGeometry {
 
-	constructor() {
+	constructor(round = false) {
 
 		super();
 
 		this.isLineSegmentsGeometry = true;
 
 		this.type = 'LineSegmentsGeometry';
+		const r = 1;
 
 		const positions = [ 
-			-1, 2, 0, 
-			1,  2, 0, 
-			-1, 1, 0, 
-			1,  1, 0, 
-			-1, 0, 0, 
-			 1, 0, 0, 
-			-1,-1, 0, 
-			 1,-1, 0 
+			-r, -r, 0,
+			r, -r, 1,
+			r, r, 1,
+			-r, -r, 0,
+			r, r, 1,
+			-r, r, 0,
 		];
-		const uvs = [ - 1, 2, 1, 2, - 1, 1, 1, 1, - 1, - 1, 1, - 1, - 1, - 2, 1, - 2 ];
-		const index = [ 0, 2, 1, 2, 3, 1, 2, 4, 3, 4, 5, 3, 4, 6, 5, 6, 7, 5 ];
+		const uvs =  [ 
+		    -0.5,-0.5, 
+		    0.5,-0.5, 
+		    0.5,0.5, 
+		    -0.5,-0.5, 
+		    0.5,0.5, 
+		    -0.5,0.5,
+		];
+		const index = [0,1,2,3,4,5,6];
 
 		this.setIndex( index );
 		this.setAttribute( 'position', new Float32BufferAttribute( positions, 3 ) );

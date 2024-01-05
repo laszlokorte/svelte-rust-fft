@@ -61,7 +61,7 @@ export const createScene = (el : HTMLCanvasElement) => {
   ]);
 
     
-   const curveGeo = new LineSegmentsGeometry();
+   const curveGeo = new LineSegmentsGeometry(true);
 
    curveGeo.setPositions([0,0,0,0,0,0]);
    curveGeo.addGroup(0,Infinity, 0)
@@ -76,24 +76,12 @@ export const createScene = (el : HTMLCanvasElement) => {
     axisGeo.setPositions([
       -2.8,0,0,
       2.8,0,0,
-      2.8,0,0,
-      3,0,0,
 
       0,-2.8,0,
       0,2.8,0,
-      0,2.8,0,
-      0,3,0,
 
       0,0,4.8,
       0,0,-4.8,
-      0,0,-4.8,
-      0,0,-5,
-    ]);
-
-    axisGeo.setWidths([
-      0.8,0.8,4,0,
-      0.8,0.8,4,0,
-      0.8,0.8,4,0
     ]);
 
 
@@ -190,13 +178,12 @@ export const createScene = (el : HTMLCanvasElement) => {
       vertexColors: false,
       dashed: false,
       alphaToCoverage: true,
-      depthTest: false,
-      depthWrite: false,
+      depthTest: true,
+      depthWrite: true,
       transparent: true,
     });
 
 
-    axisMaterial.varyWidth = true;
     axisMaterial.stencilWrite = true;
     axisMaterial.stencilRef = i;
     axisMaterial.stencilFunc = THREE.EqualStencilFunc;
@@ -211,44 +198,44 @@ export const createScene = (el : HTMLCanvasElement) => {
     axisMaterial.depthTest = true
 
     const labelMatX = new THREE.MeshBasicMaterial({ color: 0x000000 });
-    labelMatX.varyWidth = true;
     labelMatX.stencilWrite = true;
     labelMatX.stencilRef = i;
     labelMatX.alphaMap = labelsTextures[0]
     labelMatX.transparent = true
     labelMatX.stencilFunc = THREE.EqualStencilFunc;
+    labelMatX.depthWrite = false;
 
     const labelMatY = new THREE.MeshBasicMaterial({ color: 0x000000 });
-    labelMatY.varyWidth = true;
     labelMatY.stencilWrite = true;
     labelMatY.stencilRef = i;
     labelMatY.alphaMap = labelsTextures[1]
     labelMatY.transparent = true
     labelMatY.stencilFunc = THREE.EqualStencilFunc;
+    labelMatY.depthWrite = false;
 
     const labelMatZ = new THREE.MeshBasicMaterial({ color: 0x000000 });
-    labelMatZ.varyWidth = true;
     labelMatZ.stencilWrite = true;
     labelMatZ.stencilRef = i;
     labelMatZ.alphaMap = labelsTextures[2]
     labelMatZ.transparent = true
     labelMatZ.stencilFunc = THREE.EqualStencilFunc;
+    labelMatZ.depthWrite = false;
 
     const xLabel = new THREE.Mesh(labelGeo, labelMatX);
-    xLabel.renderOrder = i*2+5
+    xLabel.renderOrder = i*2+15
     xLabel.position.x = 3.2;
     xLabel.scale.y = 1/0.7;
     labels.push(xLabel)
 
 
     const yLabel = new THREE.Mesh(labelGeo, labelMatY);
-    yLabel.renderOrder = i*2+5
+    yLabel.renderOrder = i*2+15
     yLabel.position.y = 3.2;
     yLabel.scale.y = 1/0.7;
     labels.push(yLabel)
 
     const zLabel = new THREE.Mesh(labelGeo, labelMatZ);
-    zLabel.renderOrder = i*2+5
+    zLabel.renderOrder = i*2+15
     zLabel.position.z = -5.2;
     zLabel.scale.y = 1/0.7;
     labels.push(zLabel)
@@ -300,7 +287,7 @@ export const createScene = (el : HTMLCanvasElement) => {
       alphaToCoverage: true,
       transparent: true,
       depthTest: true,
-      depthWrite: true
+      depthWrite: false
     });
 
 
@@ -317,7 +304,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     const curveBars = new LineSegments2(curveGeo, curveBarMaterial);
     curveBars.computeLineDistances();
 
-    curveBars.renderOrder = i*2+3
+    curveBars.renderOrder = i*2+6
     graph.add(curveBars)
 
     graphOuter.add(graph)
@@ -329,13 +316,13 @@ export const createScene = (el : HTMLCanvasElement) => {
     const curveDotMaterial = new LineMaterial({
       // color: color & 0b00000000_01000000_01000000_01000000 | 0b00000000_10111111_10111111_10111111,
       color: color&0xa0a0a0| 0x070707,
-      linewidth: 6, // in world units with size attenuation, pixels otherwise
+      linewidth: 3.2, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       dashed: false,
       alphaToCoverage: true,
       transparent: true,
       depthTest: true,
-      depthWrite: true
+      depthWrite: false
     });
 
     lineMats.push(curveDotMaterial)
@@ -347,12 +334,12 @@ export const createScene = (el : HTMLCanvasElement) => {
     const curveDots = new LineSegments2(curveGeo, curveDotMaterial);
     curveDots.computeLineDistances();
 
-    curveDots.renderOrder = i*2+4
+    curveDots.renderOrder = i*2+7
     graph.add(curveDots)
 
     const shadow1 = new LineMaterial({
       color: color & 0b00000000_01110000_01110000_01110000,
-      linewidth: 3, // in world units with size attenuation, pixels otherwise
+      linewidth: 1.5, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       dashed: false,
       alphaToCoverage: false,
@@ -376,7 +363,7 @@ export const createScene = (el : HTMLCanvasElement) => {
 
     const shadow2 = new LineMaterial({
       color: color & 0b00000000_01110000_01110000_01110000,
-      linewidth: 3, // in world units with size attenuation, pixels otherwise
+      linewidth: 1.5, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       dashed: false,
       alphaToCoverage: false,
@@ -399,7 +386,7 @@ export const createScene = (el : HTMLCanvasElement) => {
 
     const shadow3 = new LineMaterial({
       color: color & 0b00000000_01110000_01110000_01110000,
-      linewidth: 3, // in world units with size attenuation, pixels otherwise
+      linewidth: 1.5, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       dashed: false,
       alphaToCoverage: false,
@@ -423,7 +410,7 @@ export const createScene = (el : HTMLCanvasElement) => {
 
     const shadow4 = new LineMaterial({
       color: color & 0b00000000_01110000_01110000_01110000,
-      linewidth: 3, // in world units with size attenuation, pixels otherwise
+      linewidth: 1.5, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       dashed: false,
       alphaToCoverage: false,
@@ -540,7 +527,8 @@ export const createScene = (el : HTMLCanvasElement) => {
 
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: el, alpha: true });
-
+  renderer.setPixelRatio(window.devicePixelRatio);
+  
   const controls = new OrbitControls( camera, renderer.domElement );
 
   controls.addEventListener('end', (e) => {

@@ -56,12 +56,11 @@ ShaderLib[ 'line' ] = {
 		uniform vec2 resolution;
 
 		#ifdef LINEAR_PROJECTION
+			uniform vec3 startProjectionMul;
+			uniform vec3 startProjectionAdd;
 
-		uniform vec3 startProjectionMul;
-		uniform vec3 startProjectionAdd;
-
-		uniform vec3 endProjectionMul;
-		uniform vec3 endProjectionAdd;
+			uniform vec3 endProjectionMul;
+			uniform vec3 endProjectionAdd;
 		#endif
 
 		attribute vec3 instanceStart;
@@ -71,8 +70,8 @@ ShaderLib[ 'line' ] = {
 		attribute vec3 instanceColorEnd;
 
 		#ifdef VARY_WIDTH
-		attribute float instanceWidthStart;
-		attribute float instanceWidthEnd;
+			attribute float instanceWidthStart;
+			attribute float instanceWidthEnd;
 		#endif
 
 		#ifdef WORLD_UNITS
@@ -135,19 +134,15 @@ ShaderLib[ 'line' ] = {
 			float aspect = resolution.x / resolution.y;
 
 			#ifdef LINEAR_PROJECTION
-			vec3 instanceStartProjected = instanceStart * startProjectionMul + startProjectionAdd;
-			vec3 instanceEndProjected = instanceEnd * endProjectionMul + endProjectionAdd;
-
-
-			// camera space
-			vec4 start = modelViewMatrix * vec4( instanceStartProjected, 1.0 );
-			vec4 end = modelViewMatrix * vec4( instanceEndProjected, 1.0 );
+			vec3 actualStart = instanceStart * startProjectionMul + startProjectionAdd;
+			vec3 actualEnd = instanceEnd * endProjectionMul + endProjectionAdd;
 			#else
-
-			// camera space
-			vec4 start = modelViewMatrix * vec4( instanceStart, 1.0 );
-			vec4 end = modelViewMatrix * vec4( instanceEnd, 1.0 );
+			vec3 actualStart = instanceStart;
+			vec3 actualEnd = instanceEnd;
 			#endif
+
+			vec4 start = modelViewMatrix * vec4( actualStart, 1.0 );
+			vec4 end = modelViewMatrix * vec4( actualEnd, 1.0 );
 
 
 			#ifdef WORLD_UNITS
@@ -277,11 +272,34 @@ ShaderLib[ 'line' ] = {
 
 				clip.xy += offset;
 
+
+
+				#ifdef VARY_WIDTH
+				float startWidth = linewidth * instanceWidthStart;
+				float endWidth = linewidth * instanceWidthEnd;
+				#else
+				float startWidth = linewidth;
+				float endWidth = linewidth;
+				#endif
+
+				vec2 screenStart = resolution * (0.5 * clipStart.xy/clipStart.w + 0.5);
+				vec2 screenEnd = resolution * (0.5 * clipEnd.xy/clipEnd.w + 0.5);
+				vec2 xBasis = normalize(screenEnd - screenStart);
+				if(actualStart==actualEnd) {
+					xBasis = vec2(1.0,0.0);
+				}
+				vec2 yBasis = vec2(-xBasis.y, xBasis.x);
+				vec2 pt0 = screenStart + startWidth * (position.x * xBasis + position.y * yBasis);
+				vec2 pt1 = screenEnd + endWidth * (position.x * xBasis + position.y * yBasis);
+				vec2 pt = mix(pt0, pt1, position.z);
+				vec4 clipMix = mix(clipStart, clipEnd, position.z);
+				clip = vec4(clipMix.w * (2.0 * pt/resolution - 1.0), clipMix.z, clipMix.w);
+
 			#endif
 
 			gl_Position = clip;
 
-			vec4 mvPosition = ( position.y < 0.5 ) ? start : end; // this is an approximation
+			vec4 mvPosition = mix(start, end, position.z); // this is an approximation
 
 			#include <logdepthbuf_vertex>
 			#include <clipping_planes_vertex>
@@ -391,7 +409,7 @@ ShaderLib[ 'line' ] = {
 					#ifdef USE_ALPHA_TO_COVERAGE
 
 						float dnorm = fwidth( norm );
-						alpha = 1.0 - smoothstep( 0.5 - dnorm, 0.5 + dnorm, norm );
+						alpha *= (1.0 - smoothstep( 0.5 - dnorm, 0.5 + dnorm, norm ));
 
 					#else
 
@@ -407,35 +425,22 @@ ShaderLib[ 'line' ] = {
 
 			#else
 
+				// artifacts appear on some hardware if a derivative is taken within a conditional
+				float a = vUv.x;
+				float b = vUv.y;
+				
+				float len2 = a * a + b * b;
+
 				#ifdef USE_ALPHA_TO_COVERAGE
-
-					// artifacts appear on some hardware if a derivative is taken within a conditional
-					float a = vUv.x;
-					float b = ( vUv.y > 0.0 ) ? vUv.y - 1.0 : vUv.y + 1.0;
-					float len2 = a * a + b * b;
 					float dlen = fwidth( len2 );
-
-					if ( abs( vUv.y ) > 1.0 ) {
-
-						alpha = 1.0 - smoothstep( 1.0 - dlen, 1.0 + dlen, len2 );
-
-					}
-
+					alpha *= 1.0 - smoothstep( 1.0 - dlen, 1.0 + dlen, len2 );
 				#else
-
-					if ( abs( vUv.y ) > 1.0 ) {
-
-						float a = vUv.x;
-						float b = ( vUv.y > 0.0 ) ? vUv.y - 1.0 : vUv.y + 1.0;
-						float len2 = a * a + b * b;
-
-						if ( len2 > 1.0 ) discard;
-
-					}
-
+					if ( len2 > 1.0 ) discard;
 				#endif
 
 			#endif
+
+
 
 			vec4 diffuseColor = vec4( diffuse, alpha );
 
