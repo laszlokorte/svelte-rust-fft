@@ -319,7 +319,6 @@ class LineMaterial extends ShaderMaterial {
   }
   set alphaMap(value) {
     if (!this.uniforms) return;
-    console.log(value)
     this.uniforms.alphaMap.value.copy(value);
   }
   get resolution() {
