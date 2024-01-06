@@ -8,7 +8,7 @@ import { DecalGeometry } from 'three/addons/geometries/DecalGeometry';
 export const createScene = (el : HTMLCanvasElement) => {
 
 
-  const labelsTextures = ["Re","Im","t"].map((l) => {
+  const labelsTextures = ["Re","Im","t","f"].map((l) => {
     const ctx = document.createElement('canvas').getContext('2d');
     if(ctx) {
       const texRes = 128
@@ -77,6 +77,15 @@ export const createScene = (el : HTMLCanvasElement) => {
    curveGeo.addGroup(0,Infinity, 3)
    curveGeo.addGroup(0,Infinity, 4)
 
+   const curveGeoAlt = new LineSegmentsGeometry();
+
+   curveGeoAlt.setPositions([0,0,0,0,0,0]);
+   curveGeoAlt.addGroup(0,Infinity, 0)
+   curveGeoAlt.addGroup(0,Infinity, 1)
+   curveGeoAlt.addGroup(0,Infinity, 2)
+   curveGeoAlt.addGroup(0,Infinity, 3)
+   curveGeoAlt.addGroup(0,Infinity, 4)
+
 
 
     const axisGeo = new LineSegmentsGeometry([LineSegmentsGeometry.roundCapStart, LineSegmentsGeometry.arrowCapEnd]);
@@ -96,11 +105,11 @@ export const createScene = (el : HTMLCanvasElement) => {
   let lineMats = []
 
   const rotations = [
-    {rot: new THREE.Vector3(0, 0*Math.PI/2, 0), color:  0x00ffff, shadow: true, showAxis: true, curveRot: 0},
-    {rot: new THREE.Vector3(0, 1*Math.PI/2, 0), color: 0x00ff00, shadow: true, showAxis: true, curveRot: Math.PI},
-    {rot: new THREE.Vector3(0, 2*Math.PI/2, 0), color: 0xff00ff, shadow: true, showAxis: true, curveRot: 0},
-    {rot: new THREE.Vector3(0, 3*Math.PI/2, 0), color: 0xff0000, shadow: true, showAxis: true, curveRot: 0},
-    {rot: new THREE.Vector3(0,0,+Math.PI/2), color: 0x0000ff, shadow: false, showAxis: false, curveRot: 0},
+    {rot: new THREE.Vector3(0, 0*Math.PI/2, 0), color:  0x00ffff, shadow: true, showAxis: true, curveRot: 0, curve: curveGeo, xAxisLabel: 2},
+    {rot: new THREE.Vector3(0, 1*Math.PI/2, 0), color: 0x00ff00, shadow: true, showAxis: true, curveRot: Math.PI, curve: curveGeoAlt, xAxisLabel: 3},
+    {rot: new THREE.Vector3(0, 2*Math.PI/2, 0), color: 0xff00ff, shadow: true, showAxis: true, curveRot: 0, curve: curveGeo, xAxisLabel: 2},
+    {rot: new THREE.Vector3(0, 3*Math.PI/2, 0), color: 0xff0000, shadow: true, showAxis: true, curveRot: 0, curve: curveGeoAlt, xAxisLabel: 3},
+    {rot: new THREE.Vector3(0,0,+Math.PI/2), color: 0x0000ff, shadow: false, showAxis: false, curveRot: 0, curve: curveGeo, xAxisLabel: 2},
     {rot: new THREE.Vector3(0,0,-Math.PI/2), skip: true},
   ]
 
@@ -111,7 +120,7 @@ export const createScene = (el : HTMLCanvasElement) => {
   let sides = new THREE.Group();
 
   let i = 1;
-  for(let {rot, color, shadow, showAxis, skip, curveRot} of rotations) {
+  for(let {rot, color, shadow, showAxis, skip, curveRot, curve, xAxisLabel} of rotations) {
     if(skip) continue;
 
     let sideOuter = new THREE.Group();
@@ -205,7 +214,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     const labelMatX = new LineMaterial({ color: 0x000000 });
     labelMatX.stencilWrite = true;
     labelMatX.stencilRef = i;
-    labelMatX.alphaMap = labelsTextures[0]
+    labelMatX.alphaMap = labelsTextures[1]
     labelMatX.transparent = true
     labelMatX.stencilFunc = THREE.EqualStencilFunc;
     labelMatX.depthTest = false;
@@ -216,7 +225,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     const labelMatY = new LineMaterial({ color: 0x000000 });
     labelMatY.stencilWrite = true;
     labelMatY.stencilRef = i;
-    labelMatY.alphaMap = labelsTextures[1]
+    labelMatY.alphaMap = labelsTextures[0]
     labelMatY.transparent = true
     labelMatY.stencilFunc = THREE.EqualStencilFunc;
     labelMatY.depthTest = false;
@@ -227,7 +236,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     const labelMatZ = new LineMaterial({ color: 0x000000 });
     labelMatZ.stencilWrite = true;
     labelMatZ.stencilRef = i;
-    labelMatZ.alphaMap = labelsTextures[2]
+    labelMatZ.alphaMap = labelsTextures[xAxisLabel]
     labelMatZ.transparent = true
     labelMatZ.stencilFunc = THREE.EqualStencilFunc;
     labelMatZ.depthTest = false;
@@ -310,7 +319,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     curveBarMaterial.endProjectionMul = new THREE.Vector3(1,1,1);
     curveBarMaterial.endProjectionAdd = new THREE.Vector3(0,0,0);
 
-    const curveBars = new LineSegments(curveGeo, curveBarMaterial);
+    const curveBars = new LineSegments(curve, curveBarMaterial);
 
     curveBars.renderOrder = i*2+6
     graph.add(curveBars)
@@ -328,7 +337,7 @@ export const createScene = (el : HTMLCanvasElement) => {
       vertexColors: false,
       alphaToCoverage: true,
       transparent: true,
-      depthTest: true,
+      depthTest: false,
       depthWrite: false,
     });
 
@@ -343,7 +352,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     // curveDotMaterial.endProjectionMul = new THREE.Vector3(1,1,1);
     // curveDotMaterial.endProjectionAdd = new THREE.Vector3(0,1,0);
 
-    const curveDots = new LineSegments(curveGeo, curveDotMaterial);
+    const curveDots = new LineSegments(curve, curveDotMaterial);
 
     curveDots.renderOrder = i*2+7
     graph.add(curveDots)
@@ -438,7 +447,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     shadow4.endProjectionMul = new THREE.Vector3(1,1,0);
     shadow4.endProjectionAdd = new THREE.Vector3(0,0,-5);
 
-    const curveShadows = new LineSegments(curveGeo, [shadow1, shadow2, shadow3, shadow4]);
+    const curveShadows = new LineSegments(curve, [shadow1, shadow2, shadow3, shadow4]);
 
     curveShadows.renderOrder = i*2+1
     if(shadow)
@@ -530,8 +539,9 @@ export const createScene = (el : HTMLCanvasElement) => {
   socket.renderOrder = 0
   scene.add(socket);
 
-  camera.position.z = 20;
-  camera.position.y = 0.1;
+  camera.position.x = 20;
+  camera.position.z = 6;
+  camera.position.y = 4;
 
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: el, alpha: true });
@@ -603,8 +613,13 @@ export const createScene = (el : HTMLCanvasElement) => {
     },
     setSignal(sig) {
      curveGeo.setPositions(sig.map((v,i,a) => [v, i/a.length]).flatMap(([[re, im],t]) => 
-        [im,re,(t-0.5)*9.5,
-         im,re,(t-0.5)*9.5]));
+        [im,re,(t-0.5)*8.8,
+         im,re,(t-0.5)*8.8]));
+    },
+    setSpectrum(sig) {
+     curveGeoAlt.setPositions(sig.map((v,i,a) => [v, i/a.length]).flatMap(([[re, im],t]) => 
+        [im,re,(t-0.5)*8.8,
+         im,re,(t-0.5)*8.8]));
     }
   }
 }

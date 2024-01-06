@@ -8,15 +8,17 @@
   
   let el;
   let scene = null
+  let snap = false
   let fraction = 0
   let freq = 1
   let phase = 0
   let amplitude = 1
-  let samples = 512
+  const samples = 512
 
   $: if(scene) {
   	scene.setFraction(fraction)
-  	scene.setSignal(Array(samples).fill(0).map((_,i) => [amplitude*Math.cos(Math.PI*4*(freq*(i/samples-0.5)+phase)), amplitude*Math.sin(Math.PI*4*(freq*(i/samples-0.5)+phase))]))
+  	scene.setSignal(Array(samples).fill(amplitude).map((a,i) => [a, (i/samples-0.5)]).map(([amp,t]) => [amp*Math.cos(Math.PI*2*(freq*2*t+phase/360)), amp*Math.sin(Math.PI*2*(freq*2*t+phase/360))]))
+  	scene.setSpectrum(Array(samples).fill(amplitude).map((a,i) => (samples/2-i)==freq?a:0).map((ampl, i) => [ampl*Math.cos(Math.PI*2*phase/360),ampl*Math.sin(Math.PI*2*phase/360)]))
   }
 
   onMount(() => {
@@ -81,18 +83,14 @@
 	<canvas class="canvas" bind:this={el}></canvas>
 	<div class="controls">
 		<fieldset>
-			<legend>Controls</legend>
+			<legend style="white-space: nowrap;">Controls /<label><input type="checkbox" bind:checked={snap}>Snap</label></legend>
 
-			<label>Samples: <input list="sample-list" type="range" min="16" max="512" step="1" bind:value={samples} name=""></label>
-			<label>Amplitude: <input list="ampl-list" type="range" min="0" max="2" step="0.01" bind:value={amplitude} name=""></label>
-			<label>Frequency: <input list="freq-list" type="range" min="-12" max="12" step="1" bind:value={freq} name=""></label>
-			<label>Phase: <input list="phase-list" type="range" min="-0.5" max="0.5" step="0.01" bind:value={phase} name=""></label>
-			<label>Fractional Transform: <input list="frac-list" type="range" min="-4" max="3" step="0.1" bind:value={fraction} name=""></label>
+			<label>Amplitude: <input list={snap?"ampl-list":null} type="range" min="0" max="2" step="0.01" bind:value={amplitude} name=""></label>
+			<label>Frequency: <input type="range" min="-12" max="12" step="1" bind:value={freq} name=""></label>
+			<label>Phase: <input list={snap?"phase-list":null} type="range" min="-180" max="180" step="5" bind:value={phase} name=""></label>
+			<label>Fractional Transform: <input list={snap?"frac-list":null} type="range" min="-4" max="3" step="0.1" bind:value={fraction} name=""></label>
 
-			<datalist id="sample-list">
-				<option>8</option>
-				<option>256</option>
-			</datalist>
+
 
 			<datalist id="ampl-list">
 				<option>0</option>
