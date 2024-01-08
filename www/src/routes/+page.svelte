@@ -5,7 +5,7 @@
 <script>
   import { onMount } from 'svelte';
   import { createScene } from "./scene";
-  import { Signal }  from 'fftwasm/fftwasm'
+  import { Signal }  from 'fftwasm/fftwasm.js'
   import { memory }  from 'fftwasm/fftwasm_bg.wasm'
   
   

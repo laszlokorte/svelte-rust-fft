@@ -199,6 +199,9 @@ export const createScene = (el : HTMLCanvasElement) => {
     });
 
 
+    axisMaterial.polar = true;
+    axisMaterial.polarSourceLength = 30;
+    axisMaterial.polarRadiusBase = 2.5;
     axisMaterial.stencilWrite = true;
     axisMaterial.stencilRef = i;
     axisMaterial.stencilFunc = THREE.EqualStencilFunc;
@@ -212,6 +215,9 @@ export const createScene = (el : HTMLCanvasElement) => {
     axisMaterial.depthTest = true
 
     const labelMatX = new LineMaterial({ color: 0x000000 });
+    labelMatX.polar = false;
+    labelMatX.polarSourceLength = 30;
+    labelMatX.polarRadiusBase = 0;
     labelMatX.stencilWrite = true;
     labelMatX.stencilRef = i;
     labelMatX.alphaMap = labelsTextures[1]
@@ -223,6 +229,9 @@ export const createScene = (el : HTMLCanvasElement) => {
     labelMatX.textured = true;
 
     const labelMatY = new LineMaterial({ color: 0x000000 });
+    labelMatY.polar = false;
+    labelMatY.polarSourceLength = 30;
+    labelMatY.polarRadiusBase = 2.5;
     labelMatY.stencilWrite = true;
     labelMatY.stencilRef = i;
     labelMatY.alphaMap = labelsTextures[0]
@@ -234,6 +243,9 @@ export const createScene = (el : HTMLCanvasElement) => {
     labelMatY.textured= true;
 
     const labelMatZ = new LineMaterial({ color: 0x000000 });
+    labelMatZ.polar = false;
+    labelMatZ.polarSourceLength = 30;
+    labelMatZ.polarRadiusBase = 2.5;
     labelMatZ.stencilWrite = true;
     labelMatZ.stencilRef = i;
     labelMatZ.alphaMap = labelsTextures[xAxisLabel]
@@ -309,6 +321,9 @@ export const createScene = (el : HTMLCanvasElement) => {
     });
 
 
+    curveBarMaterial.polar = true;
+    curveBarMaterial.polarSourceLength = 4.4;
+    curveBarMaterial.polarRadiusBase = 2.5;
     curveBarMaterial.opacity = 0.7;
     curveBarMaterial.stencilWrite = true;
     curveBarMaterial.stencilRef = i;
@@ -343,6 +358,9 @@ export const createScene = (el : HTMLCanvasElement) => {
 
     lineMats.push(curveDotMaterial)
 
+    curveDotMaterial.polar = true;
+    curveDotMaterial.polarSourceLength = 4.4;
+    curveDotMaterial.polarRadiusBase = 2.5;
     curveDotMaterial.stencilWrite = true;
     curveDotMaterial.stencilRef = i;
     curveDotMaterial.stencilFunc = THREE.EqualStencilFunc;
@@ -390,6 +408,9 @@ export const createScene = (el : HTMLCanvasElement) => {
 
     lineMats.push(shadow2)
 
+    shadow2.polar = true;
+    shadow2.polarSourceLength = 4.4;
+    shadow2.polarRadiusBase = 2.5;
     shadow2.transparent = true
     shadow2.opacity = 0.05
     shadow2.stencilWrite = true;

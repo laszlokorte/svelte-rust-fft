@@ -31,6 +31,12 @@ UniformsLib.line = {
   linewidth: {
     value: 1
   },
+  polarSourceLength: {
+    value: 1
+  },
+  polarRadiusBase: {
+    value: 1
+  },
   alphaMap: {
   	type: 't',
   	value: new Texture(),
@@ -61,6 +67,11 @@ ShaderLib['line'] = {
 
 		uniform vec3 endProjectionMul;
 		uniform vec3 endProjectionAdd;
+		#endif
+
+		#ifdef POLAR
+		uniform float polarSourceLength;
+		uniform float polarRadiusBase;
 		#endif
 
 		attribute vec3 instanceStart;
@@ -109,8 +120,32 @@ ShaderLib['line'] = {
 			vec3 actualEnd = instanceEnd;
 			#endif
 
+			
+			#ifdef POLAR
+			float cosStart = cos(actualStart.z/polarSourceLength * PI - PI/4.0);
+			float sinStart = sin(actualStart.z/polarSourceLength * PI - PI/4.0);
+
+			float newXStart = polarRadiusBase*cosStart - polarRadiusBase*sinStart + actualStart.x * cosStart - actualStart.x * sinStart;
+			float newZStart = polarRadiusBase*cosStart + polarRadiusBase*sinStart + actualStart.x * sinStart + actualStart.x * cosStart;
+
+			actualStart.x = newXStart;
+			actualStart.z = newZStart;
+
+			float cosEnd = cos(actualEnd.z/polarSourceLength * PI - PI/4.0);
+			float sinEnd = sin(actualEnd.z/polarSourceLength * PI - PI/4.0);
+
+			float newXEnd = polarRadiusBase*cosEnd - polarRadiusBase*sinEnd + actualEnd.x * cosEnd - actualEnd.x * sinEnd;
+			float newZEnd = polarRadiusBase*cosEnd + polarRadiusBase*sinEnd + actualEnd.x * sinEnd + actualEnd.x * cosEnd;
+
+			actualEnd.x = newXEnd;
+			actualEnd.z = newZEnd;
+			#endif
+
+
 			vec4 start = modelViewMatrix * vec4(actualStart, 1.0);
 			vec4 end = modelViewMatrix * vec4(actualEnd, 1.0);
+
+
 
 			vUv = uv;
 
@@ -163,7 +198,7 @@ ShaderLib['line'] = {
 			vec4 clipMix = mix(clipStart, clipEnd, position.z);
 			vec4 clip = vec4(clipMix.w * (2.0 * pt/resolution - 1.0), clipMix.z, clipMix.w);
 
-			gl_Position = clip; // + vec4(gl_InstanceID,0.0,0.0,0.0);
+			gl_Position = clip;
 
 			vec4 mvPosition = mix(start, end, position.z); // this is an approximation
 
@@ -265,6 +300,30 @@ class LineMaterial extends ShaderMaterial {
     } else {
       delete this.defines.LINEAR_PROJECTION;
     }
+  }
+  get polar() {
+    return 'POLAR' in this.defines;
+  }
+  set polar(value) {
+    if (value === true) {
+      this.defines.POLAR = '';
+    } else {
+      delete this.defines.POLAR;
+    }
+  }
+  get polarSourceLength() {
+    return this.uniforms.polarSourceLength.value;
+  }
+  set polarSourceLength(value) {
+    if (!this.uniforms.polarSourceLength) return;
+    this.uniforms.polarSourceLength.value = value;
+  }
+  get polarRadiusBase() {
+    return this.uniforms.polarRadiusBase.value;
+  }
+  set polarRadiusBase(value) {
+    if (!this.uniforms.polarRadiusBase) return;
+    this.uniforms.polarRadiusBase.value = value;
   }
   get textured() {
     return 'TEXTURED' in this.defines;
