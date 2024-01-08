@@ -5,9 +5,13 @@
 <script>
   import { onMount } from 'svelte';
   import { createScene } from "./scene";
+  import { Signal }  from 'fftwasm/fftwasm'
+  import { memory }  from 'fftwasm/fftwasm_bg.wasm'
+  
   
   const decimalFormat = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   const intFormat = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0, signDisplay: 'exceptZero' })
+  const signal = Signal.new(1024)
 
   const maxFreq = Math.pow(2,6)-1
 
@@ -21,15 +25,17 @@
   let shape = 'rect'
   let timeShift = 0
   let timeStretch = 0
-  const samples = 512
+  const samples = signal.get_len() ;
+  const timeDomain = new Float32Array(memory.buffer, signal.get_time(), 2*signal.get_len())
+  const freqDomain = new Float32Array(memory.buffer, signal.get_freq(), 2*signal.get_len())
 
   const shapes = {
   	constant: (x) => 1,
   	dirac: (x) => x==0 ? 1 : 0,
-  	rect: (x) => Math.abs(x*Math.PI*8)<=1 ? 1 : 0,
-  	sinc: (x) => !isFinite(x)?0:x==0?1:Math.sin(Math.PI*2*x*4)/(Math.PI*2*x*4),
-  	gauss: (x) => !isFinite(x)?0:Math.exp(-x*x*16*Math.PI*Math.PI),
-  	sha: (x) => x%0.125==0 ? 1 : 0,
+  	rect: (x) => Math.abs(x*16)<=0.5 ? 1 : 0,
+  	sinc: (x) => !isFinite(x)?0:x==0?1:Math.sin(2*16*Math.PI*x)/(2*16*Math.PI*x),
+  	gauss: (x) => !isFinite(x)?0:Math.exp(-0.5*x*x*16*16*Math.PI*Math.PI),
+  	sha: (x) => (16*x)%1==0 ? 1 : 0,
   }
 
   const transformPairs = {
@@ -48,10 +54,29 @@
 
   $: timeStetchExp = Math.pow(2,timeStretch)
   $: if(scene) {
+  	for(let i=0;i<samples;i++) {
+  		const t = (i/samples-0.5);
+  		const mag = amplitude*shapes[shape](timeStetchExp*(t-timeShift/samples))
+  		const phi = Math.PI*2*(freq*2*t+phase/360)
+
+  		timeDomain[2*i] = mag * Math.cos(phi)
+  		timeDomain[2*i+1] =  mag * Math.sin(phi)
+  	}
+
+  	// for(let i=0;i<samples;i++) {
+  	// 	const t = (i-freq)/samples-0.5;
+  	// 	const mag = amplitude*shapes[transformPairs[shape]](t&&t/timeStetchExp)
+  	// 	const phi = Math.PI*2*(phase/360-2*t*timeShift)
+
+  	// 	freqDomain[2*i] = mag * Math.cos(phi)
+  	// 	freqDomain[2*i+1] =  mag * Math.sin(phi)
+  	// }
+
+  	signal.update_freq()
+
   	scene.setFraction(fraction)
-  	scene.setSignal(Array(samples).fill(amplitude).map((a,i) => [a, (i/samples-0.5)]).map(([ampl,t]) => [ampl*shapes[shape](timeStetchExp*(t-timeShift/samples))* Math.cos(Math.PI*2*(freq*2*t+phase/360)), ampl*shapes[shape](timeStetchExp*(t-timeShift/samples))*Math.sin(Math.PI*2*(freq*2*t+phase/360))]))
-  	
-  	scene.setSpectrum(Array(samples).fill(amplitude).map((a,i) => [a, ((i-freq)/samples-0.5)]).map(([ampl, i]) => [ampl*shapes[transformPairs[shape]](i&&i/timeStetchExp)*Math.cos(Math.PI*2*(phase/360-2*i*timeShift)),ampl*shapes[transformPairs[shape]](i&&i/timeStetchExp)*Math.sin(Math.PI*2*(phase/360-2*i*timeShift))]))
+  	scene.setSignal(timeDomain)
+  	scene.setSpectrum(freqDomain)
   }
 
   onMount(() => {
@@ -124,7 +149,7 @@
 				<option value={shape}>{shape}</option>
 					{/each}
 				</select></label>
-				<output style="text-decoration: underline; cursor: pointer;" on:click={swapShape}>swap</output> 
+				<button type="button" on:click={swapShape} style="text-decoration: underline; cursor: pointer;">swap</button> 
 				<br>
 
 				<label>Time Shift: <output>{intFormat.format(timeShift)}</output>

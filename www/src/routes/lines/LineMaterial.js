@@ -163,7 +163,7 @@ ShaderLib['line'] = {
 			vec4 clipMix = mix(clipStart, clipEnd, position.z);
 			vec4 clip = vec4(clipMix.w * (2.0 * pt/resolution - 1.0), clipMix.z, clipMix.w);
 
-			gl_Position = clip;
+			gl_Position = clip; // + vec4(gl_InstanceID,0.0,0.0,0.0);
 
 			vec4 mvPosition = mix(start, end, position.z); // this is an approximation
 

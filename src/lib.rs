@@ -49,17 +49,31 @@ impl Signal {
         self.time.len()
     }
 
-    pub fn set_sin(&mut self, freq: f32, phase: f32, ampl: f32) {
-        let len = self.time.len() as f32;
-        for (i, v) in self.time.iter_mut().enumerate() {
-            let t = (i as f32) / len - 0.5;
-
-            v.re = ampl * (freq * t * PI * 4.0 + phase * 2.0 * PI).cos();
-            v.im = ampl * (freq * t * PI * 4.0 + phase * 2.0 * PI).sin();
-        }
-
+    pub fn update_freq(&mut self) {
         self.freq.clone_from(&self.time);
+        self.freq.rotate_right(self.time.len() / 2);
         self.fft.process(&mut self.freq);
         self.freq.rotate_right(self.time.len() / 2);
+        let scale = self.time.iter().map(|z|z.norm()).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(1.0) 
+        / self.freq.iter().map(|z|z.norm()).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(1.0);
+
+        for v in self.freq.iter_mut() {
+            v.re *= scale;
+            v.im *= scale;
+        }
+    }
+
+    pub fn update_time(&mut self) {
+        self.time.clone_from(&self.freq);
+        self.time.rotate_right(self.freq.len() / 2);
+        self.fft.process(&mut self.time);
+        self.time.rotate_right(self.freq.len() / 2);
+        let scale = self.freq.iter().map(|z|z.norm()).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(1.0) 
+        / self.time.iter().map(|z|z.norm()).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(1.0);
+
+        for v in self.time.iter_mut() {
+            v.re *= scale;
+            v.im *= scale;
+        }
     }
 }

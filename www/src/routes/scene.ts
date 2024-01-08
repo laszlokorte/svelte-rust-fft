@@ -105,11 +105,11 @@ export const createScene = (el : HTMLCanvasElement) => {
   let lineMats = []
 
   const rotations = [
-    {rot: new THREE.Vector3(0, 0*Math.PI/2, 0), color:  0x00ffff, shadow: true, showAxis: true, curveRot: 0, curve: curveGeo, xAxisLabel: 2},
-    {rot: new THREE.Vector3(0, 1*Math.PI/2, 0), color: 0x00ff00, shadow: true, showAxis: true, curveRot: Math.PI, curve: curveGeoAlt, xAxisLabel: 3},
-    {rot: new THREE.Vector3(0, 2*Math.PI/2, 0), color: 0xff00ff, shadow: true, showAxis: true, curveRot: 0, curve: curveGeo, xAxisLabel: 2},
-    {rot: new THREE.Vector3(0, 3*Math.PI/2, 0), color: 0xff0000, shadow: true, showAxis: true, curveRot: 0, curve: curveGeoAlt, xAxisLabel: 3},
-    {rot: new THREE.Vector3(0,0,+Math.PI/2), color: 0x0000ff, shadow: false, showAxis: false, curveRot: 0, curve: curveGeo, xAxisLabel: 2},
+    {rot: new THREE.Vector3(0, 0*Math.PI/2, 0), color:  0x00ffff, shadow: true, showAxis: true, curve: curveGeo, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,1)},
+    {rot: new THREE.Vector3(0, 1*Math.PI/2, 0), color: 0x00ff00, shadow: true, showAxis: true, curve: curveGeoAlt, xAxisLabel: 3, reflector: new THREE.Vector3(1,1,1)},
+    {rot: new THREE.Vector3(0, 2*Math.PI/2, 0), color: 0xff00ff, shadow: true, showAxis: true, curve: curveGeo, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,-1)},
+    {rot: new THREE.Vector3(0, 3*Math.PI/2, 0), color: 0xff0000, shadow: true, showAxis: true, curve: curveGeoAlt, xAxisLabel: 3, reflector: new THREE.Vector3(1,1,-1)},
+    {rot: new THREE.Vector3(0,0,+Math.PI/2), color: 0x0000ff, shadow: false, showAxis: false, curve: curveGeo, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,1)},
     {rot: new THREE.Vector3(0,0,-Math.PI/2), skip: true},
   ]
 
@@ -120,7 +120,7 @@ export const createScene = (el : HTMLCanvasElement) => {
   let sides = new THREE.Group();
 
   let i = 1;
-  for(let {rot, color, shadow, showAxis, skip, curveRot, curve, xAxisLabel} of rotations) {
+  for(let {rot, color, shadow, showAxis, skip, curve, xAxisLabel, reflector} of rotations) {
     if(skip) continue;
 
     let sideOuter = new THREE.Group();
@@ -314,9 +314,9 @@ export const createScene = (el : HTMLCanvasElement) => {
     curveBarMaterial.stencilRef = i;
     curveBarMaterial.stencilFunc = THREE.EqualStencilFunc;
     curveBarMaterial.linearProjected = true;
-    curveBarMaterial.startProjectionMul = new THREE.Vector3(0,0,1);
+    curveBarMaterial.startProjectionMul = new THREE.Vector3(0,0,reflector.z);
     curveBarMaterial.startProjectionAdd = new THREE.Vector3(0,0,0);
-    curveBarMaterial.endProjectionMul = new THREE.Vector3(1,1,1);
+    curveBarMaterial.endProjectionMul = new THREE.Vector3(reflector.x,reflector.y,reflector.z);
     curveBarMaterial.endProjectionAdd = new THREE.Vector3(0,0,0);
 
     const curveBars = new LineSegments(curve, curveBarMaterial);
@@ -346,11 +346,11 @@ export const createScene = (el : HTMLCanvasElement) => {
     curveDotMaterial.stencilWrite = true;
     curveDotMaterial.stencilRef = i;
     curveDotMaterial.stencilFunc = THREE.EqualStencilFunc;
-    // curveDotMaterial.linearProjected = true;
-    // curveDotMaterial.startProjectionMul = new THREE.Vector3(1,1,1);
-    // curveDotMaterial.startProjectionAdd = new THREE.Vector3(0,0,0);
-    // curveDotMaterial.endProjectionMul = new THREE.Vector3(1,1,1);
-    // curveDotMaterial.endProjectionAdd = new THREE.Vector3(0,1,0);
+    curveDotMaterial.linearProjected = true;
+    curveDotMaterial.startProjectionMul = reflector;
+    curveDotMaterial.startProjectionAdd = new THREE.Vector3(0,0,0);
+    curveDotMaterial.endProjectionMul = reflector;
+    curveDotMaterial.endProjectionAdd = new THREE.Vector3(0,0,0);
 
     const curveDots = new LineSegments(curve, curveDotMaterial);
 
@@ -374,11 +374,10 @@ export const createScene = (el : HTMLCanvasElement) => {
     shadow1.stencilRef = i;
     shadow1.stencilFunc = THREE.EqualStencilFunc;
     shadow1.linearProjected = true;
-    shadow1.startProjectionMul = new THREE.Vector3(0,1,1);
-    shadow1.startProjectionAdd = new THREE.Vector3(-5,0,0).applyEuler(new THREE.Euler(0,curveRot,0));
-    shadow1.endProjectionMul = new THREE.Vector3(0,1,1);
-    shadow1.endProjectionAdd = new THREE.Vector3(-5,0,0).applyEuler(new THREE.Euler(0,curveRot,0));
-
+    shadow1.startProjectionMul = new THREE.Vector3(0,reflector.y,reflector.z);
+    shadow1.startProjectionAdd = new THREE.Vector3(-5,0,0);
+    shadow1.endProjectionMul = new THREE.Vector3(0,reflector.y,reflector.z);
+    shadow1.endProjectionAdd = new THREE.Vector3(-5,0,0);
 
     const shadow2 = new LineMaterial({
       color: color & 0b00000000_01110000_01110000_01110000,
@@ -397,9 +396,9 @@ export const createScene = (el : HTMLCanvasElement) => {
     shadow2.stencilRef = i;
     shadow2.stencilFunc = THREE.EqualStencilFunc;
     shadow2.linearProjected = true;
-    shadow2.startProjectionMul = new THREE.Vector3(1,0,1);
+    shadow2.startProjectionMul = new THREE.Vector3(reflector.x,0,reflector.z);
     shadow2.startProjectionAdd = new THREE.Vector3(0,-5*stretchHeight,0);
-    shadow2.endProjectionMul = new THREE.Vector3(1,0,1);
+    shadow2.endProjectionMul = new THREE.Vector3(reflector.x,0,reflector.z);
     shadow2.endProjectionAdd = new THREE.Vector3(0,-5*stretchHeight,0);
 
     const shadow3 = new LineMaterial({
@@ -419,9 +418,9 @@ export const createScene = (el : HTMLCanvasElement) => {
     shadow3.stencilRef = i;
     shadow3.stencilFunc = THREE.EqualStencilFunc;
     shadow3.linearProjected = true;
-    shadow3.startProjectionMul = new THREE.Vector3(1,1,0);
+    shadow3.startProjectionMul = new THREE.Vector3(reflector.x,reflector.y,0);
     shadow3.startProjectionAdd = new THREE.Vector3(0,0,5);
-    shadow3.endProjectionMul = new THREE.Vector3(1,1,0);
+    shadow3.endProjectionMul = new THREE.Vector3(reflector.x,reflector.y,0);
     shadow3.endProjectionAdd = new THREE.Vector3(0,0,5);
 
 
@@ -442,9 +441,9 @@ export const createScene = (el : HTMLCanvasElement) => {
     shadow4.stencilRef = i;
     shadow4.stencilFunc = THREE.EqualStencilFunc;
     shadow4.linearProjected = true;
-    shadow4.startProjectionMul = new THREE.Vector3(1,1,0);
+    shadow4.startProjectionMul = new THREE.Vector3(reflector.x,reflector.y,0);
     shadow4.startProjectionAdd = new THREE.Vector3(0,0,-5);
-    shadow4.endProjectionMul = new THREE.Vector3(1,1,0);
+    shadow4.endProjectionMul = new THREE.Vector3(reflector.x,reflector.y,0);
     shadow4.endProjectionAdd = new THREE.Vector3(0,0,-5);
 
     const curveShadows = new LineSegments(curve, [shadow1, shadow2, shadow3, shadow4]);
@@ -456,11 +455,6 @@ export const createScene = (el : HTMLCanvasElement) => {
     sideOuter.add(graphOuter)
 
     sideOuter.add(side)
-
-
-    curveBars.rotation.y = -curveRot
-    curveDots.rotation.y = -curveRot
-    curveShadows.rotation.y = -curveRot
 
     sides.add(sideOuter);
     cubeSides.push({labelMatX,labelMatY,labelMatZ,curveDots, curveBars, sideOuter, cubeMaterial, face, shadow1, shadow2, shadow3, shadow4, curveBarMaterial, windowMaterial, curveDotMaterial, axisMaterial,outlineMat})
@@ -612,14 +606,20 @@ export const createScene = (el : HTMLCanvasElement) => {
       axees[4].rotation.y = frac * Math.PI/2
     },
     setSignal(sig) {
-     curveGeo.setPositions(sig.map((v,i,a) => [v, i/a.length]).flatMap(([[re, im],t]) => 
-        [im,re,(t-0.5)*8.8,
-         im,re,(t-0.5)*8.8]));
+      var newPos = []
+      for(let i=0;i<sig.length;i+=2) {
+        newPos.push(sig[i+1],sig[i],(i/sig.length-0.5)*8.8)
+        newPos.push(sig[i+1],sig[i],(i/sig.length-0.5)*8.8)
+      }
+     curveGeo.setPositions(newPos);
     },
     setSpectrum(sig) {
-     curveGeoAlt.setPositions(sig.map((v,i,a) => [v, i/a.length]).flatMap(([[re, im],t]) => 
-        [im,re,(t-0.5)*8.8,
-         im,re,(t-0.5)*8.8]));
+      var newPos = []
+      for(let i=0;i<sig.length;i+=2) {
+        newPos.push(sig[i+1],sig[i],(i/sig.length-0.5)*8.8)
+        newPos.push(sig[i+1],sig[i],(i/sig.length-0.5)*8.8)
+      }
+     curveGeoAlt.setPositions(newPos);
     }
   }
 }
