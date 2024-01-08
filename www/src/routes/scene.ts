@@ -103,6 +103,8 @@ export const createScene = (el : HTMLCanvasElement) => {
 
 
   let lineMats = []
+  let polarMaterials = []
+  let polarHide = []
 
   const rotations = [
     {rot: new THREE.Vector3(0, 0*Math.PI/2, 0), color:  0x00ffff, shadow: true, showAxis: true, curve: curveGeo, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,1)},
@@ -199,8 +201,10 @@ export const createScene = (el : HTMLCanvasElement) => {
     });
 
 
+    polarMaterials.push(axisMaterial)
     axisMaterial.polar = true;
     axisMaterial.polarSourceLength = 30;
+    axisMaterial.polarRadiusScale = 0.2;
     axisMaterial.polarRadiusBase = 2.5;
     axisMaterial.stencilWrite = true;
     axisMaterial.stencilRef = i;
@@ -211,6 +215,7 @@ export const createScene = (el : HTMLCanvasElement) => {
 
     axees.push(graphOuter)
 
+    polarHide.push(axis)
     axis.renderOrder = i*2+5
     axisMaterial.depthTest = true
 
@@ -272,6 +277,9 @@ export const createScene = (el : HTMLCanvasElement) => {
     zLabel.position.z = -4.5;
     labels.push(zLabel)
 
+
+    polarHide.push(xLabel, yLabel, zLabel)
+
     if(showAxis) {
       axis.add(xLabel)
       axis.add(yLabel)
@@ -321,6 +329,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     });
 
 
+    polarMaterials.push(curveBarMaterial)
     curveBarMaterial.polar = true;
     curveBarMaterial.polarSourceLength = 4.4;
     curveBarMaterial.polarRadiusBase = 2.5;
@@ -358,6 +367,7 @@ export const createScene = (el : HTMLCanvasElement) => {
 
     lineMats.push(curveDotMaterial)
 
+    polarMaterials.push(curveDotMaterial)
     curveDotMaterial.polar = true;
     curveDotMaterial.polarSourceLength = 4.4;
     curveDotMaterial.polarRadiusBase = 2.5;
@@ -408,6 +418,7 @@ export const createScene = (el : HTMLCanvasElement) => {
 
     lineMats.push(shadow2)
 
+    polarMaterials.push(shadow2)
     shadow2.polar = true;
     shadow2.polarSourceLength = 4.4;
     shadow2.polarRadiusBase = 2.5;
@@ -615,7 +626,6 @@ export const createScene = (el : HTMLCanvasElement) => {
 
   renderer.setAnimationLoop(animate);
 
-
   window.addEventListener('resize', resize);
 
   return {
@@ -641,6 +651,14 @@ export const createScene = (el : HTMLCanvasElement) => {
         newPos.push(sig[i+1],sig[i],(i/sig.length-0.5)*8.8)
       }
      curveGeoAlt.setPositions(newPos);
+    },
+    setPolar(p) {
+      for(let m of polarMaterials) {
+        m.polarSkip = p?0:1
+      }
+      for(let m of polarHide) {
+        m.visible = !p
+      }
     }
   }
 }

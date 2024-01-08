@@ -34,7 +34,13 @@ UniformsLib.line = {
   polarSourceLength: {
     value: 1
   },
+  polarSkip: {
+    value: 1
+  },
   polarRadiusBase: {
+    value: 1
+  },
+  polarRadiusScale: {
     value: 1
   },
   alphaMap: {
@@ -71,7 +77,9 @@ ShaderLib['line'] = {
 
 		#ifdef POLAR
 		uniform float polarSourceLength;
+		uniform float polarSkip;
 		uniform float polarRadiusBase;
+		uniform float polarRadiusScale;
 		#endif
 
 		attribute vec3 instanceStart;
@@ -112,38 +120,47 @@ ShaderLib['line'] = {
 
 			float aspect = resolution.x / resolution.y;
 
+
+			vec3 inStart = instanceStart;
+			vec3 inEnd = instanceEnd;
+
+
 			#ifdef LINEAR_PROJECTION
-			vec3 actualStart = instanceStart * startProjectionMul + startProjectionAdd;
-			vec3 actualEnd = instanceEnd * endProjectionMul + endProjectionAdd;
-			#else
-			vec3 actualStart = instanceStart;
-			vec3 actualEnd = instanceEnd;
+			inStart = inStart * startProjectionMul + startProjectionAdd;
+			inEnd = inEnd * endProjectionMul + endProjectionAdd;
 			#endif
+
+
+			#ifdef POLAR
+			if(polarSkip < 0.5) {
+
+				float cosStart = cos(inStart.z/polarSourceLength * PI - PI/4.0);
+				float sinStart = sin(inStart.z/polarSourceLength * PI - PI/4.0);
+
+				float newXStart = polarRadiusBase*cosStart - polarRadiusBase*sinStart + (inStart.x * cosStart - inStart.x * sinStart)*polarRadiusScale;
+				float newZStart = polarRadiusBase*cosStart + polarRadiusBase*sinStart + (inStart.x * sinStart + inStart.x * cosStart)*polarRadiusScale;
+
+				inStart.x = newXStart;
+				inStart.z = newZStart;
+				inStart.y *= polarRadiusScale;
+
+				float cosEnd = cos(inEnd.z/polarSourceLength * PI - PI/4.0);
+				float sinEnd = sin(inEnd.z/polarSourceLength * PI - PI/4.0);
+
+				float newXEnd = polarRadiusBase*cosEnd - polarRadiusBase*sinEnd + (inEnd.x * cosEnd - inEnd.x * sinEnd)*polarRadiusScale;
+				float newZEnd = polarRadiusBase*cosEnd + polarRadiusBase*sinEnd + (inEnd.x * sinEnd + inEnd.x * cosEnd)*polarRadiusScale;
+
+				inEnd.x = newXEnd;
+				inEnd.z = newZEnd;
+				inEnd.y *= polarRadiusScale;
+			}
+			#endif
+
 
 			
-			#ifdef POLAR
-			float cosStart = cos(actualStart.z/polarSourceLength * PI - PI/4.0);
-			float sinStart = sin(actualStart.z/polarSourceLength * PI - PI/4.0);
 
-			float newXStart = polarRadiusBase*cosStart - polarRadiusBase*sinStart + actualStart.x * cosStart - actualStart.x * sinStart;
-			float newZStart = polarRadiusBase*cosStart + polarRadiusBase*sinStart + actualStart.x * sinStart + actualStart.x * cosStart;
-
-			actualStart.x = newXStart;
-			actualStart.z = newZStart;
-
-			float cosEnd = cos(actualEnd.z/polarSourceLength * PI - PI/4.0);
-			float sinEnd = sin(actualEnd.z/polarSourceLength * PI - PI/4.0);
-
-			float newXEnd = polarRadiusBase*cosEnd - polarRadiusBase*sinEnd + actualEnd.x * cosEnd - actualEnd.x * sinEnd;
-			float newZEnd = polarRadiusBase*cosEnd + polarRadiusBase*sinEnd + actualEnd.x * sinEnd + actualEnd.x * cosEnd;
-
-			actualEnd.x = newXEnd;
-			actualEnd.z = newZEnd;
-			#endif
-
-
-			vec4 start = modelViewMatrix * vec4(actualStart, 1.0);
-			vec4 end = modelViewMatrix * vec4(actualEnd, 1.0);
+			vec4 start = modelViewMatrix * vec4(inStart, 1.0);
+			vec4 end = modelViewMatrix * vec4(inEnd, 1.0);
 
 
 
@@ -187,7 +204,7 @@ ShaderLib['line'] = {
 			vec2 xBasis = normalize(screenEnd - screenStart);
 			vec2 yBasis = vec2(-xBasis.y, xBasis.x);
 
-			if(actualStart==actualEnd) {
+			if(inStart==inEnd) {
 				yBasis = vec2(1.0,0.0);
 				xBasis = vec2(0.0,-1.0);
 			}
@@ -318,12 +335,26 @@ class LineMaterial extends ShaderMaterial {
     if (!this.uniforms.polarSourceLength) return;
     this.uniforms.polarSourceLength.value = value;
   }
+  get polarSkip() {
+    return this.uniforms.polarSkip.value;
+  }
+  set polarSkip(value) {
+    if (!this.uniforms.polarSkip) return;
+    this.uniforms.polarSkip.value = value;
+  }
   get polarRadiusBase() {
     return this.uniforms.polarRadiusBase.value;
   }
   set polarRadiusBase(value) {
     if (!this.uniforms.polarRadiusBase) return;
     this.uniforms.polarRadiusBase.value = value;
+  }
+  get polarRadiusScale() {
+    return this.uniforms.polarRadiusScale.value;
+  }
+  set polarRadiusScale(value) {
+    if (!this.uniforms.polarRadiusScale) return;
+    this.uniforms.polarRadiusScale.value = value;
   }
   get textured() {
     return 'TEXTURED' in this.defines;

@@ -25,6 +25,7 @@
   let shape = 'rect'
   let timeShift = 0
   let timeStretch = 0
+  let polar = false
   const samples = signal.get_len() ;
   const timeDomain = new Float32Array(memory.buffer, signal.get_time(), 2*signal.get_len())
   const freqDomain = new Float32Array(memory.buffer, signal.get_freq(), 2*signal.get_len())
@@ -77,6 +78,11 @@
   	scene.setFraction(fraction)
   	scene.setSignal(timeDomain)
   	scene.setSpectrum(freqDomain)
+  }
+  $: {
+  	if(scene) {
+  		scene.setPolar(polar)
+  	}
   }
 
   onMount(() => {
@@ -174,6 +180,8 @@
 
 			<label>Fractional Transform: <input list={snap?"frac-list":null} type="range" min="-4" max="3" step="0.1" bind:value={fraction} name=""></label>
 
+			<hr>
+			<label><input type="checkbox" bind:checked={polar}> Polar</label>
 
 
 			<datalist id="ampl-list">
