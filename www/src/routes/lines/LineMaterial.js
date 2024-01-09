@@ -142,7 +142,11 @@ ShaderLib['line'] = {
 
 				inStart.x = newXStart;
 				inStart.z = newZStart;
-				inStart.y *= polarRadiusScale;
+				#ifdef LINEAR_PROJECTION
+				inStart.y = (inStart.y - startProjectionAdd.y) * polarRadiusScale + startProjectionAdd.y;
+				#else
+				inStart.y = inStart.y * polarRadiusScale;
+				#endif
 
 				float cosEnd = cos(inEnd.z/polarSourceLength * PI - PI/4.0);
 				float sinEnd = sin(inEnd.z/polarSourceLength * PI - PI/4.0);
@@ -152,7 +156,11 @@ ShaderLib['line'] = {
 
 				inEnd.x = newXEnd;
 				inEnd.z = newZEnd;
-				inEnd.y *= polarRadiusScale;
+				#ifdef LINEAR_PROJECTION
+				inEnd.y = (inEnd.y - endProjectionAdd.y) * polarRadiusScale + endProjectionAdd.y;
+				#else
+				inEnd.y = inEnd.y * polarRadiusScale;
+				#endif
 			}
 			#endif
 

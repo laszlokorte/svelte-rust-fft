@@ -107,9 +107,9 @@ export const createScene = (el : HTMLCanvasElement) => {
   let polarHide = []
 
   const rotations = [
-    {rot: new THREE.Vector3(0, 0*Math.PI/2, 0), color:  0x00ffff, shadow: true, showAxis: true, curve: curveGeo, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,1)},
+    {rot: new THREE.Vector3(0, 0*Math.PI/2, 0), color:  0x00ffff, shadow: true, showAxis: true, curve: curveGeo, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,-1)},
     {rot: new THREE.Vector3(0, 1*Math.PI/2, 0), color: 0x00ff00, shadow: true, showAxis: true, curve: curveGeoAlt, xAxisLabel: 3, reflector: new THREE.Vector3(1,1,1)},
-    {rot: new THREE.Vector3(0, 2*Math.PI/2, 0), color: 0xff00ff, shadow: true, showAxis: true, curve: curveGeo, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,-1)},
+    {rot: new THREE.Vector3(0, 2*Math.PI/2, 0), color: 0xff00ff, shadow: true, showAxis: true, curve: curveGeo, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,1)},
     {rot: new THREE.Vector3(0, 3*Math.PI/2, 0), color: 0xff0000, shadow: true, showAxis: true, curve: curveGeoAlt, xAxisLabel: 3, reflector: new THREE.Vector3(1,1,-1)},
     {rot: new THREE.Vector3(0,0,+Math.PI/2), color: 0x0000ff, shadow: false, showAxis: false, curve: curveGeo, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,1)},
     {rot: new THREE.Vector3(0,0,-Math.PI/2), skip: true},
@@ -332,6 +332,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     polarMaterials.push(curveBarMaterial)
     curveBarMaterial.polar = true;
     curveBarMaterial.polarSourceLength = 4.4;
+    curveBarMaterial.polarRadiusScale = 0.5;
     curveBarMaterial.polarRadiusBase = 2.5;
     curveBarMaterial.opacity = 0.7;
     curveBarMaterial.stencilWrite = true;
@@ -370,6 +371,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     polarMaterials.push(curveDotMaterial)
     curveDotMaterial.polar = true;
     curveDotMaterial.polarSourceLength = 4.4;
+    curveDotMaterial.polarRadiusScale = 0.5;
     curveDotMaterial.polarRadiusBase = 2.5;
     curveDotMaterial.stencilWrite = true;
     curveDotMaterial.stencilRef = i;
@@ -417,10 +419,10 @@ export const createScene = (el : HTMLCanvasElement) => {
     });
 
     lineMats.push(shadow2)
-
     polarMaterials.push(shadow2)
     shadow2.polar = true;
     shadow2.polarSourceLength = 4.4;
+    shadow2.polarRadiusScale = 0.5;
     shadow2.polarRadiusBase = 2.5;
     shadow2.transparent = true
     shadow2.opacity = 0.05
@@ -478,6 +480,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     shadow4.endProjectionMul = new THREE.Vector3(reflector.x,reflector.y,0);
     shadow4.endProjectionAdd = new THREE.Vector3(0,0,-5);
 
+    polarHide.push(shadow1, shadow3, shadow4)
     const curveShadows = new LineSegments(curve, [shadow1, shadow2, shadow3, shadow4]);
 
     curveShadows.renderOrder = i*2+1

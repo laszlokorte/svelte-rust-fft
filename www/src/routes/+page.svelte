@@ -11,9 +11,10 @@
   
   const decimalFormat = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   const intFormat = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0, signDisplay: 'exceptZero' })
-  const signal = Signal.new(1024)
+  const samples = 1024
+  const signal = Signal.new(samples)
 
-  const maxFreq = Math.pow(2,6)-1
+  const maxFreq = samples/2
 
   let el;
   let scene = null
@@ -25,18 +26,24 @@
   let shape = 'rect'
   let timeShift = 0
   let timeStretch = 0
-  let polar = false
-  const samples = signal.get_len() ;
+  let circular = false
   const timeDomain = new Float32Array(memory.buffer, signal.get_time(), 2*signal.get_len())
   const freqDomain = new Float32Array(memory.buffer, signal.get_freq(), 2*signal.get_len())
+
+	function sinc(x) {
+		return x==0?1:Math.sin(x)/x
+	}
 
   const shapes = {
   	constant: (x) => 1,
   	dirac: (x) => x==0 ? 1 : 0,
-  	rect: (x) => Math.abs(x*16)<=0.5 ? 1 : 0,
-  	sinc: (x) => !isFinite(x)?0:x==0?1:Math.sin(2*16*Math.PI*x)/(2*16*Math.PI*x),
-  	gauss: (x) => !isFinite(x)?0:Math.exp(-0.5*x*x*16*16*Math.PI*Math.PI),
-  	sha: (x) => (16*x)%1==0 ? 1 : 0,
+  	rect: (x) => Math.abs(16*x)<=1 ? 1 : 0,
+  	sinc: (x,ts) => !isFinite(x)?0:sinc(x*8*Math.PI/2),
+  	gauss: (x) => !isFinite(x)?0:Math.exp(-0.5*x*x*16*16*Math.sqrt(2)),
+  	sha: (x) => (24*x)%1==0 ? 1 : 0,
+  	saw: (x) => ((x*8)%1+1)%1,
+  	tri: (x) => Math.abs(((Math.abs(x)*16)%2+2)%2-1),
+  	exp: (x) => Math.exp(-Math.abs(16*x)),
   }
 
   const transformPairs = {
@@ -53,15 +60,17 @@
   	shape = transformPairs[shape]
   }
 
-  $: timeStetchExp = Math.pow(2,timeStretch)
+  $: canSwap = !!transformPairs[shape]
+
+  $: timeStetchExp = Math.pow(2,timeStretch+2)
   $: if(scene) {
   	for(let i=0;i<samples;i++) {
   		const t = (i/samples-0.5);
-  		const mag = amplitude*shapes[shape](timeStetchExp*(t-timeShift/samples))
+  		const mag = amplitude*shapes[shape](timeStetchExp*(t), timeStetchExp)
   		const phi = Math.PI*2*(freq*2*t+phase/360)
 
-  		timeDomain[2*i] = mag * Math.cos(phi)
-  		timeDomain[2*i+1] =  mag * Math.sin(phi)
+  		timeDomain[(2*i+2*timeShift+samples*2)%(samples*2)] = mag * Math.cos(phi)
+  		timeDomain[(2*i+1+2*timeShift+samples*2)%(samples*2)] =  mag * Math.sin(phi)
   	}
 
   	// for(let i=0;i<samples;i++) {
@@ -81,7 +90,7 @@
   }
   $: {
   	if(scene) {
-  		scene.setPolar(polar)
+  		scene.setPolar(circular)
   	}
   }
 
@@ -155,14 +164,16 @@
 				<option value={shape}>{shape}</option>
 					{/each}
 				</select></label>
+				{#if canSwap}
 				<button type="button" on:click={swapShape} style="text-decoration: underline; cursor: pointer;">swap</button> 
+				{/if}
 				<br>
 
 				<label>Time Shift: <output>{intFormat.format(timeShift)}</output>
-					<input type="range" min="-{maxFreq}" max="{maxFreq}" step="1" bind:value={timeShift} name="">
+					<input list="freq-list" type="range" min="-{samples}" max="{samples}" step="1" bind:value={timeShift} name="">
 				</label>
 				<label>Time Stretch: <output>{intFormat.format(timeStretch)}</output>
-					<input type="range" min="-3" max="3" step="1" bind:value={timeStretch} name="">
+					<input type="range" min="-5" max="5" step="1" bind:value={timeStretch} name="">
 				</label>
 
 			<hr>
@@ -171,7 +182,7 @@
 				<input list={snap?"ampl-list":null} type="range" min="0" max="2" step="0.01" bind:value={amplitude} name=""></label>
 			<label>Frequency:  <output>{intFormat.format(freq)}</output> 
 
-				<input type="range" min="-{maxFreq}" max="{maxFreq}" step="1" bind:value={freq} name=""></label>
+				<input list="freq-list" type="range" min="-{maxFreq}" max="{maxFreq}" step="1" bind:value={freq} name=""></label>
 			<label>Phase: <output>{intFormat.format(phase)}°</output> 
 
 				<input list={snap?"phase-list":null} type="range" min="-180" max="180" step="5" bind:value={phase} name=""></label>
@@ -181,7 +192,7 @@
 			<label>Fractional Transform: <input list={snap?"frac-list":null} type="range" min="-4" max="3" step="0.1" bind:value={fraction} name=""></label>
 
 			<hr>
-			<label><input type="checkbox" bind:checked={polar}> Polar</label>
+			<label><input type="checkbox" bind:checked={circular}> Circular</label>
 
 
 			<datalist id="ampl-list">
@@ -191,7 +202,6 @@
 
 			<datalist id="freq-list">
 				<option>0</option>
-				<option>1</option>
 			</datalist>
 			<datalist id="phase-list">
 				<option>0</option>

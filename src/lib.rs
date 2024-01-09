@@ -54,8 +54,11 @@ impl Signal {
         self.freq.rotate_right(self.time.len() / 2);
         self.fft.process(&mut self.freq);
         self.freq.rotate_right(self.time.len() / 2);
-        let scale = self.time.iter().map(|z|z.norm()).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(1.0) 
-        / self.freq.iter().map(|z|z.norm()).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(1.0);
+
+        let scale_nominator = self.time.iter().map(|z|z.norm()).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(1.0);
+        let scale_denom = self.freq.iter().map(|z|z.norm()).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(1.0);
+
+        let scale = if scale_denom != 0.0 { scale_nominator / scale_denom } else {1.0};
 
         for v in self.freq.iter_mut() {
             v.re *= scale;
@@ -68,8 +71,10 @@ impl Signal {
         self.time.rotate_right(self.freq.len() / 2);
         self.fft.process(&mut self.time);
         self.time.rotate_right(self.freq.len() / 2);
-        let scale = self.freq.iter().map(|z|z.norm()).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(1.0) 
-        / self.time.iter().map(|z|z.norm()).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(1.0);
+        let scale_nominator = self.freq.iter().map(|z|z.norm()).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(1.0);
+        let scale_denom = self.time.iter().map(|z|z.norm()).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(1.0);
+
+        let scale = if scale_denom != 0.0 { scale_nominator / scale_denom } else {1.0};
 
         for v in self.time.iter_mut() {
             v.re *= scale;
