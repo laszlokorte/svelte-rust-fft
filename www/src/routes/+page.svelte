@@ -18,12 +18,12 @@
 
   let el;
   let scene = null
-  let snap = false
+  let snap = true
   let fraction = 0
   let freq = 0
   let phase = 0
   let amplitude = 1
-  let shape = 'rect'
+  let shape = 'constant'
   let timeShift = 0
   let timeStretch = 0
   let circular = false
@@ -31,19 +31,21 @@
   const freqDomain = new Float32Array(memory.buffer, signal.get_freq(), 2*signal.get_len())
 
 	function sinc(x) {
-		return x==0?1:Math.sin(x)/x
+		return x==0?1:Math.sin((Math.PI/2)*x)/((Math.PI/2)*x)
 	}
+
 
   const shapes = {
   	constant: (x) => 1,
   	dirac: (x) => x==0 ? 1 : 0,
-  	rect: (x) => Math.abs(16*x)<=1 ? 1 : 0,
-  	sinc: (x,ts) => !isFinite(x)?0:sinc(x*8*Math.PI/2),
-  	gauss: (x) => !isFinite(x)?0:Math.exp(-0.5*x*x*16*16*Math.sqrt(2)),
-  	sha: (x) => (24*x)%1==0 ? 1 : 0,
-  	saw: (x) => ((x*8)%1+1)%1,
-  	tri: (x) => Math.abs(((Math.abs(x)*16)%2+2)%2-1),
-  	exp: (x) => Math.exp(-Math.abs(16*x)),
+  	rect: (x) => Math.abs(x)<=1 ? 1 : 0,
+  	sinc: (x) => !isFinite(x)?0:sinc(x),
+  	gauss: (x) => !isFinite(x)?0:Math.exp(-0.5*x*x*Math.sqrt(2)),
+  	sha: (x) => (1.5*x)%1==0 ? 1 : 0,
+  	saw: (x) => ((x/2+0.5)%1+1)%1,
+  	tri: (x) => Math.abs(((Math.abs(x))%2+2)%2-1),
+  	exp: (x) => Math.exp(-Math.abs(x)/(Math.sqrt(2)*0.5)),
+  	couchy: (x) => (Math.sqrt(2)*0.5)/(x*x+(Math.sqrt(2)*0.5)),
   }
 
   const transformPairs = {
@@ -53,6 +55,8 @@
   	'sinc': 'rect',
   	'gauss': 'gauss',
   	'sha': 'sha',
+  	'exp': 'couchy',
+  	'couchy': 'exp',
   }
 
   function swapShape(evt) {
@@ -60,13 +64,11 @@
   	shape = transformPairs[shape]
   }
 
-  $: canSwap = !!transformPairs[shape]
-
   $: timeStetchExp = Math.pow(2,timeStretch+2)
   $: if(scene) {
   	for(let i=0;i<samples;i++) {
   		const t = (i/samples-0.5);
-  		const mag = amplitude*shapes[shape](timeStetchExp*(t), timeStetchExp)
+  		const mag = amplitude*shapes[shape](timeStetchExp*t*16)
   		const phi = Math.PI*2*(freq*2*t+phase/360)
 
   		timeDomain[(2*i+2*timeShift+samples*2)%(samples*2)] = mag * Math.cos(phi)
@@ -100,6 +102,8 @@
     return scene.dispose
   });
 </script>
+
+<svelte:window on:keydown={(evt) => {snap = !evt.ctrlKey}} on:keyup={(evt) => {snap = !evt.ctrlKey}} />
 
 <style>
 	:global(body) {
@@ -156,42 +160,47 @@
 	<canvas class="canvas" bind:this={el}></canvas>
 	<div class="controls">
 		<fieldset>
-			<legend style="white-space: nowrap;">Controls /<label><input type="checkbox" bind:checked={snap}>Snap</label></legend>
+			<legend style="white-space: nowrap;">Discrete Fourier<br>Transform</legend>
 
-			<label>Shape:<br>
-				<select bind:value={shape}>
-					{#each Object.keys(shapes) as shape}
-				<option value={shape}>{shape}</option>
-					{/each}
-				</select></label>
-				{#if canSwap}
-				<button type="button" on:click={swapShape} style="text-decoration: underline; cursor: pointer;">swap</button> 
-				{/if}
+				<label for="signal_shape">Shape:</label><br>
+				<span style:display="flex" style:gap="0.2em">
+					<select id="signal_shape" bind:value={shape}>
+						{#each Object.keys(shapes) as shape}
+					<option value={shape}>{shape}</option>
+						{/each}
+					</select>
+					{#if !!transformPairs[shape]}
+					<button type="button" on:click={swapShape} style="cursor: pointer;">⊶ {transformPairs[shape]}</button> 
+					{/if}
+				</span>
 				<br>
-
-				<label>Time Shift: <output>{intFormat.format(timeShift)}</output>
-					<input list="freq-list" type="range" min="-{samples}" max="{samples}" step="1" bind:value={timeShift} name="">
+			<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Amplitude:  <output>{decimalFormat.format(amplitude)}</output></span>
+				<input list={snap?"ampl-list":null} type="range" min="0" max="2" step="0.01" bind:value={amplitude} name=""></label><br>
+				<hr>
+				<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Time Shift: <output>{intFormat.format(timeShift)}</output></span>
+					<input list={snap?"freq-list":null} type="range" min="-{samples}" max="{samples}" step="1" bind:value={timeShift} name="">
 				</label>
-				<label>Time Stretch: <output>{intFormat.format(timeStretch)}</output>
-					<input type="range" min="-5" max="5" step="1" bind:value={timeStretch} name="">
+				<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Time Stretch: <output>{(snap?intFormat:decimalFormat).format(timeStretch)}</output></span>
+					<input type="range" min="-5" max="5" step={snap?1:0.01} bind:value={timeStretch} name="">
 				</label>
 
 			<hr>
 
-			<label>Amplitude:  <output>{decimalFormat.format(amplitude)}</output>
-				<input list={snap?"ampl-list":null} type="range" min="0" max="2" step="0.01" bind:value={amplitude} name=""></label>
-			<label>Frequency:  <output>{intFormat.format(freq)}</output> 
+			<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Linear Phase:  <output>{intFormat.format(freq)}</output> </span>
 
-				<input list="freq-list" type="range" min="-{maxFreq}" max="{maxFreq}" step="1" bind:value={freq} name=""></label>
-			<label>Phase: <output>{intFormat.format(phase)}°</output> 
+				<input list={snap?"freq-list":null} type="range" min="-{maxFreq}" max="{maxFreq}" step="1" bind:value={freq} name=""></label>
+			<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Constant Phase: <output>{intFormat.format(phase)}°</output> </span>
 
 				<input list={snap?"phase-list":null} type="range" min="-180" max="180" step="5" bind:value={phase} name=""></label>
 
 			<hr>
 
-			<label>Fractional Transform: <input list={snap?"frac-list":null} type="range" min="-4" max="3" step="0.1" bind:value={fraction} name=""></label>
+			<label>
+				<span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Fractional Transform: </span>
+				<input list={snap?"frac-list":null} type="range" min="-4" max="4" step="0.1" bind:value={fraction} name=""></label>
 
 			<hr>
+			<strong>View</strong><br>
 			<label><input type="checkbox" bind:checked={circular}> Circular</label>
 
 
@@ -207,6 +216,7 @@
 				<option>0</option>
 			</datalist>
 			<datalist id="frac-list">
+				<option>0</option>
 				<option>-1</option>
 				<option>-2</option>
 				<option>-3</option>
