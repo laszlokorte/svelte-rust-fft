@@ -5,8 +5,10 @@
 <script>
   import { onMount } from 'svelte';
   import { createScene } from "./scene";
-  import { Signal }  from 'fftwasm/fftwasm.js'
-  import { memory }  from 'fftwasm/fftwasm_bg.wasm'
+  import { Signal, __wbg_set_wasm }  from 'fftwasm/fftwasm_bg.js'
+  import * as wasm   from 'fftwasm/fftwasm_bg.wasm'
+
+  __wbg_set_wasm(wasm)
   
   
   const decimalFormat = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -27,8 +29,8 @@
   let timeShift = 0
   let timeStretch = 0
   let circular = false
-  const timeDomain = new Float32Array(memory.buffer, signal.get_time(), 2*signal.get_len())
-  const freqDomain = new Float32Array(memory.buffer, signal.get_freq(), 2*signal.get_len())
+  const timeDomain = new Float32Array(wasm.memory.buffer, signal.get_time(), 2*signal.get_len())
+  const freqDomain = new Float32Array(wasm.memory.buffer, signal.get_freq(), 2*signal.get_len())
 
 	function sinc(x) {
 		return x==0?1:Math.sin((Math.PI/2)*x)/((Math.PI/2)*x)
