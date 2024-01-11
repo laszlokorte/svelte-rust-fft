@@ -113,10 +113,12 @@ class LineSegmentsGeometry extends InstancedBufferGeometry {
     ])
   }
 
-  constructor(capGens = [LineSegmentsGeometry.roundCapStart, LineSegmentsGeometry.roundCapEnd]) {
+  constructor(dims = 3, interleave = 2, capGens = [LineSegmentsGeometry.roundCapStart, LineSegmentsGeometry.roundCapEnd]) {
     super();
     this.isLineSegmentsGeometry = true;
     this.type = 'LineSegmentsGeometry';
+    this.dims = dims
+    this.interleave = interleave
     const r = 1;
     const thickness = 2
     const overhang = 0
@@ -171,16 +173,16 @@ class LineSegmentsGeometry extends InstancedBufferGeometry {
       }
     }
     this.prevLength = array.length
-    this.instanceCount = newLength / 6
+    this.instanceCount = newLength / (this.dims * (1+this.interleave))
     let lineSegments;
     if (array instanceof Float32Array) {
       lineSegments = array;
     } else if (Array.isArray(array)) {
       lineSegments = new Float32Array(array);
     }
-    const instanceBuffer = new InstancedInterleavedBuffer(lineSegments, 6, 1); // xyz, xyz
-    this.setAttribute('instanceStart', new InterleavedBufferAttribute(instanceBuffer, 3, 0)); // xyz
-    this.setAttribute('instanceEnd', new InterleavedBufferAttribute(instanceBuffer, 3, 3)); // xyz
+    const instanceBuffer = new InstancedInterleavedBuffer(lineSegments, (1+this.interleave)*this.dims, 1); // xyz, xyz
+    this.setAttribute('instanceStart', new InterleavedBufferAttribute(instanceBuffer, this.dims, 0)); // xyz
+    this.setAttribute('instanceEnd', new InterleavedBufferAttribute(instanceBuffer, this.dims, this.interleave*this.dims)); // xyz
     //
     this.computeBoundingBox();
     this.computeBoundingSphere();
@@ -230,6 +232,10 @@ class LineSegmentsGeometry extends InstancedBufferGeometry {
     return this;
   }
   computeBoundingBox() {
+    if(this.dims != 3) {
+      this.boundingBox = new Box3();
+      return
+    }
     if (this.boundingBox === null) {
       this.boundingBox = new Box3();
     }
@@ -242,6 +248,11 @@ class LineSegmentsGeometry extends InstancedBufferGeometry {
     }
   }
   computeBoundingSphere() {
+    if(this.dims != 3) {
+      this.boundingSphere = new Sphere();
+      this.boundingSphere.radius = 0.1
+      return
+    }
     if (this.boundingSphere === null) {
       this.boundingSphere = new Sphere();
     }

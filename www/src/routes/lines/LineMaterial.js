@@ -43,6 +43,21 @@ UniformsLib.line = {
   polarRadiusScale: {
     value: 1
   },
+  project2DStart: {
+  	value: new Vector3(0.0, 0.0, 0.0),
+  },
+	project2DEnd: {
+  	value: new Vector3(0.0, 0.0, 1.0),
+	},
+	project2DUp: {
+  	value: new Vector3(1, 0, 0),
+	},
+	project2DSide: {
+  	value: new Vector3(0, 1, 0),
+	},
+  instanceCount: {
+    value: 1
+  },
   alphaMap: {
   	type: 't',
   	value: new Texture(),
@@ -82,8 +97,19 @@ ShaderLib['line'] = {
 		uniform float polarRadiusScale;
 		#endif
 
+		#ifdef PROJECT2D
+		attribute vec2 instanceStart;
+		attribute vec2 instanceEnd;
+
+		uniform vec3 project2DStart;
+		uniform vec3 project2DEnd;
+		uniform vec3 project2DUp;
+		uniform vec3 project2DSide;
+		uniform float instanceCount;
+		#else
 		attribute vec3 instanceStart;
 		attribute vec3 instanceEnd;
+		#endif
 
 		attribute vec3 instanceColorStart;
 		attribute vec3 instanceColorEnd;
@@ -121,8 +147,14 @@ ShaderLib['line'] = {
 			float aspect = resolution.x / resolution.y;
 
 
+			#ifdef PROJECT2D
+			vec3 projBase = mix(project2DStart, project2DEnd, float(gl_InstanceID) / instanceCount);
+			vec3 inStart = projBase + project2DUp * instanceStart.y + project2DSide * instanceStart.x;
+			vec3 inEnd = projBase + project2DUp * instanceEnd.y + project2DSide * instanceEnd.x;
+			#else
 			vec3 inStart = instanceStart;
 			vec3 inEnd = instanceEnd;
+			#endif
 
 
 			#ifdef LINEAR_PROJECTION
@@ -336,6 +368,16 @@ class LineMaterial extends ShaderMaterial {
       delete this.defines.POLAR;
     }
   }
+  get project2d() {
+    return 'PROJECT2D' in this.defines;
+  }
+  set project2d(value) {
+    if (value === true) {
+      this.defines.PROJECT2D = '';
+    } else {
+      delete this.defines.PROJECT2D;
+    }
+  }
   get polarSourceLength() {
     return this.uniforms.polarSourceLength.value;
   }
@@ -418,6 +460,20 @@ class LineMaterial extends ShaderMaterial {
   set alphaMap(value) {
     if (!this.uniforms) return;
     this.uniforms.alphaMap.value.copy(value);
+  }
+  get project2DEnd() {
+    return this.uniforms.project2DEnd.value;
+  }
+  set project2DEnd(value) {
+    if (!this.uniforms) return;
+    this.uniforms.project2DEnd.value.copy(value);
+  }
+  get project2DStart() {
+    return this.uniforms.project2DStart.value;
+  }
+  set project2DStart(value) {
+    if (!this.uniforms) return;
+    this.uniforms.project2DStart.value.copy(value);
   }
   get resolution() {
     return this.uniforms.resolution.value;

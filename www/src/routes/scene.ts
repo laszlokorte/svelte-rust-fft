@@ -41,7 +41,7 @@ export const createScene = (el : HTMLCanvasElement) => {
 
   const stretchHeight = 1/1.618
 
-  const outlineGeo = new LineSegmentsGeometry();
+  const outlineGeo = new LineSegmentsGeometry(3, 1);
   outlineGeo.setPositions([
     -5,-5,-5,5,-5,-5,
     -5,-5,5,5,-5,5,
@@ -61,25 +61,26 @@ export const createScene = (el : HTMLCanvasElement) => {
   ]);
 
 
-  const labelGeoNew = new LineSegmentsGeometry([LineSegmentsGeometry.squareCapStart(-3,3)]);
+  const labelGeoNew = new LineSegmentsGeometry(3, 1, [LineSegmentsGeometry.squareCapStart(-3,3)]);
   labelGeoNew.setPositions([
+    0,0.0,0,
     0,0.0,0,
     0,0.0,0
   ]);
 
     
-   const curveGeo = new LineSegmentsGeometry();
+   const curveGeo = new LineSegmentsGeometry(2, 0);
 
-   curveGeo.setPositions([0,0,0,0,0,0]);
+   curveGeo.setPositions([0,0,0,0]);
    curveGeo.addGroup(0,Infinity, 0)
    curveGeo.addGroup(0,Infinity, 1)
    curveGeo.addGroup(0,Infinity, 2)
    curveGeo.addGroup(0,Infinity, 3)
    curveGeo.addGroup(0,Infinity, 4)
 
-   const curveGeoAlt = new LineSegmentsGeometry();
+   const curveGeoAlt = new LineSegmentsGeometry(2, 0);
 
-   curveGeoAlt.setPositions([0,0,0,0,0,0]);
+   curveGeoAlt.setPositions([0,0,0,0]);
    curveGeoAlt.addGroup(0,Infinity, 0)
    curveGeoAlt.addGroup(0,Infinity, 1)
    curveGeoAlt.addGroup(0,Infinity, 2)
@@ -88,7 +89,7 @@ export const createScene = (el : HTMLCanvasElement) => {
 
 
 
-    const axisGeo = new LineSegmentsGeometry([LineSegmentsGeometry.roundCapStart, LineSegmentsGeometry.arrowCapEnd]);
+    const axisGeo = new LineSegmentsGeometry(3, 1, [LineSegmentsGeometry.roundCapStart, LineSegmentsGeometry.arrowCapEnd]);
     axisGeo.setPositions([
       -2.8,0,0,
       2.8,0,0,
@@ -325,13 +326,16 @@ export const createScene = (el : HTMLCanvasElement) => {
       alphaToCoverage: true,
       transparent: true,
       depthTest: true,
-      depthWrite: false
+      depthWrite: false,
+      project2d: true,
+      project2DStart: new THREE.Vector3(0,0,-4.3),
+      project2DEnd: new THREE.Vector3(0,0,4.3),
     });
 
 
     polarMaterials.push(curveBarMaterial)
     curveBarMaterial.polar = true;
-    curveBarMaterial.polarSourceLength = 4.4;
+    curveBarMaterial.polarSourceLength = 4.3;
     curveBarMaterial.polarRadiusScale = 0.5;
     curveBarMaterial.polarRadiusBase = 2.5;
     curveBarMaterial.opacity = 0.7;
@@ -364,13 +368,16 @@ export const createScene = (el : HTMLCanvasElement) => {
       transparent: true,
       depthTest: false,
       depthWrite: false,
+      project2d: true,
+      project2DStart: new THREE.Vector3(0,0,-4.3),
+      project2DEnd: new THREE.Vector3(0,0,4.3),
     });
 
     lineMats.push(curveDotMaterial)
 
     polarMaterials.push(curveDotMaterial)
     curveDotMaterial.polar = true;
-    curveDotMaterial.polarSourceLength = 4.4;
+    curveDotMaterial.polarSourceLength = 4.3;
     curveDotMaterial.polarRadiusScale = 0.5;
     curveDotMaterial.polarRadiusBase = 2.5;
     curveDotMaterial.stencilWrite = true;
@@ -394,6 +401,9 @@ export const createScene = (el : HTMLCanvasElement) => {
       alphaToCoverage: false,
       depthTest: false,
       depthWrite: false,
+      project2d: true,
+      project2DStart: new THREE.Vector3(0,0,-4.3),
+      project2DEnd: new THREE.Vector3(0,0,4.3),
     });
 
     lineMats.push(shadow1)
@@ -416,12 +426,15 @@ export const createScene = (el : HTMLCanvasElement) => {
       alphaToCoverage: false,
       depthTest: false,
       depthWrite: false,
+      project2d: true,
+      project2DStart: new THREE.Vector3(0,0,-4.3),
+      project2DEnd: new THREE.Vector3(0,0,4.3),
     });
 
     lineMats.push(shadow2)
     polarMaterials.push(shadow2)
     shadow2.polar = true;
-    shadow2.polarSourceLength = 4.4;
+    shadow2.polarSourceLength = 4.3;
     shadow2.polarRadiusScale = 0.5;
     shadow2.polarRadiusBase = 2.5;
     shadow2.transparent = true
@@ -442,6 +455,9 @@ export const createScene = (el : HTMLCanvasElement) => {
       alphaToCoverage: false,
       depthTest: false,
       depthWrite: false,
+      project2d: true,
+      project2DStart: new THREE.Vector3(0,0,-4.3),
+      project2DEnd: new THREE.Vector3(0,0,4.3),
     });
 
     lineMats.push(shadow3)
@@ -465,6 +481,9 @@ export const createScene = (el : HTMLCanvasElement) => {
       alphaToCoverage: false,
       depthTest: false,
       depthWrite: false,
+      project2d: true,
+      project2DStart: new THREE.Vector3(0,0,-4.3),
+      project2DEnd: new THREE.Vector3(0,0,4.3),
     });
 
     lineMats.push(shadow4)
@@ -640,20 +659,10 @@ export const createScene = (el : HTMLCanvasElement) => {
       axees[4].rotation.y = frac * Math.PI/2
     },
     setSignal(sig) {
-      var newPos = []
-      for(let i=0;i<sig.length;i+=2) {
-        newPos.push(sig[i+1],sig[i],(i/sig.length-0.5)*8.8)
-        newPos.push(sig[i+1],sig[i],(i/sig.length-0.5)*8.8)
-      }
-     curveGeo.setPositions(newPos);
+     curveGeo.setPositions(sig);
     },
     setSpectrum(sig) {
-      var newPos = []
-      for(let i=0;i<sig.length;i+=2) {
-        newPos.push(sig[i+1],sig[i],(i/sig.length-0.5)*8.8)
-        newPos.push(sig[i+1],sig[i],(i/sig.length-0.5)*8.8)
-      }
-     curveGeoAlt.setPositions(newPos);
+     curveGeoAlt.setPositions(sig);
     },
     setPolar(p) {
       for(let m of polarMaterials) {

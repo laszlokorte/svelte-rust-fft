@@ -174,6 +174,11 @@ class LineSegments extends Mesh {
     this.isLineSegments = true;
     this.type = 'LineSegments';
   }
+
+  onBeforeRender(renderer, scene, camera, geometry, material, group) {
+    material.uniforms.instanceCount.value = geometry.instanceCount
+  }
+
   raycast(raycaster, intersects) {
     const worldUnits = this.material.worldUnits;
     const camera = raycaster.camera;
