@@ -31,6 +31,7 @@
   let circular = false
   const timeDomain = new Float32Array(wasm.memory.buffer, signal.get_time(), 2*signal.get_len())
   const freqDomain = new Float32Array(wasm.memory.buffer, signal.get_freq(), 2*signal.get_len())
+  const fracDomain = new Float32Array(wasm.memory.buffer, signal.get_frac(), 2*signal.get_len())
 
 	function sinc(x) {
 		return x==0?1:Math.sin((Math.PI/2)*x)/((Math.PI/2)*x)
@@ -40,6 +41,8 @@
   const shapes = {
   	constant: (x) => 1,
   	dirac: (x) => x==0 ? 1 : 0,
+  	dirac_pair: (x, minx) => ((minx < 1 && x==0) || Math.abs(x)==1) ? 1 : 0,
+  	cos: (x) => Math.cos(Math.PI/2*x),
   	rect: (x) => Math.abs(x)<=1 ? 1 : 0,
   	sinc: (x) => !isFinite(x)?0:sinc(x),
   	gauss: (x) => !isFinite(x)?0:Math.exp(-0.5*x*x*Math.sqrt(2)),
@@ -53,6 +56,8 @@
   const transformPairs = {
   	'constant': 'dirac',
   	'dirac': 'constant',
+  	'dirac_pair': 'cos',
+  	'cos': 'dirac_pair',
   	'rect': 'sinc',
   	'sinc': 'rect',
   	'gauss': 'gauss',
@@ -67,30 +72,27 @@
   }
 
   $: timeStetchExp = Math.pow(2,timeStretch+2)
+
+  $: if(scene) {
+  	scene.setSignal(timeDomain)
+  	scene.setSpectrum(freqDomain)
+  	scene.setFractional(fracDomain)
+  }
+
   $: if(scene) {
   	for(let i=0;i<samples;i++) {
   		const t = (i/samples-0.5);
-  		const mag = amplitude*shapes[shape](timeStetchExp*t*16)
+  		const mag = amplitude*shapes[shape](timeStetchExp*t*16, samples/(timeStetchExp*16))
   		const phi = Math.PI*2*(freq*2*t+phase/360)
 
   		timeDomain[(2*i+2*timeShift+samples*2)%(samples*2)] = mag * Math.cos(phi)
   		timeDomain[(2*i+1+2*timeShift+samples*2)%(samples*2)] =  mag * Math.sin(phi)
   	}
 
-  	// for(let i=0;i<samples;i++) {
-  	// 	const t = (i-freq)/samples-0.5;
-  	// 	const mag = amplitude*shapes[transformPairs[shape]](t&&t/timeStetchExp)
-  	// 	const phi = Math.PI*2*(phase/360-2*t*timeShift)
-
-  	// 	freqDomain[2*i] = mag * Math.cos(phi)
-  	// 	freqDomain[2*i+1] =  mag * Math.sin(phi)
-  	// }
-
   	signal.update_freq()
+  	signal.update_frac(fraction)
 
-  	scene.setFraction(fraction)
-  	scene.setSignal(timeDomain)
-  	scene.setSpectrum(freqDomain)
+  	scene.setFractionalRotation(fraction * Math.PI/2)
   }
   $: {
   	if(scene) {
@@ -180,7 +182,7 @@
 				<input list={snap?"ampl-list":null} type="range" min="0" max="2" step="0.01" bind:value={amplitude} name=""></label><br>
 				<hr>
 				<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Time Shift: <output>{intFormat.format(timeShift)}</output></span>
-					<input list={snap?"freq-list":null} type="range" min="-{samples}" max="{samples}" step="1" bind:value={timeShift} name="">
+					<input list={snap?"freq-list":null} type="range" min="-{samples*3/4}" max="{samples*3/4}" step="1" bind:value={timeShift} name="">
 				</label>
 				<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Time Stretch: <output>{(snap?intFormat:decimalFormat).format(timeStretch)}</output></span>
 					<input type="range" min="-5" max="5" step={snap?1:0.01} bind:value={timeStretch} name="">
@@ -190,7 +192,7 @@
 
 			<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Linear Phase:  <output>{intFormat.format(freq)}</output> </span>
 
-				<input list={snap?"freq-list":null} type="range" min="-{maxFreq}" max="{maxFreq}" step="1" bind:value={freq} name=""></label>
+				<input list={snap?"freq-list":null} type="range" min="-{maxFreq*3/4}" max="{maxFreq*3/4}" step="1" bind:value={freq} name=""></label>
 			<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Constant Phase: <output>{intFormat.format(phase)}°</output> </span>
 
 				<input list={snap?"phase-list":null} type="range" min="-180" max="180" step="5" bind:value={phase} name=""></label>

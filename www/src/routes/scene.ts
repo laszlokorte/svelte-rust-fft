@@ -63,9 +63,10 @@ export const createScene = (el : HTMLCanvasElement) => {
 
   const labelGeoNew = new LineSegmentsGeometry(3, 1, [LineSegmentsGeometry.squareCapStart(-3,3)]);
   labelGeoNew.setPositions([
-    0,0.0,0,
-    0,0.0,0,
-    0,0.0,0
+    0,0,0,
+    0,0,0,
+    0,0,0,
+    0,0,0
   ]);
 
     
@@ -81,6 +82,15 @@ export const createScene = (el : HTMLCanvasElement) => {
    const curveGeoAlt = new LineSegmentsGeometry(2, 0);
 
    curveGeoAlt.setPositions([0,0,0,0]);
+   curveGeoAlt.addGroup(0,Infinity, 0)
+   curveGeoAlt.addGroup(0,Infinity, 1)
+   curveGeoAlt.addGroup(0,Infinity, 2)
+   curveGeoAlt.addGroup(0,Infinity, 3)
+   curveGeoAlt.addGroup(0,Infinity, 4)
+
+   const curveGeoTop = new LineSegmentsGeometry(2, 0);
+
+   curveGeoTop.setPositions([0,0,0,0])
    curveGeoAlt.addGroup(0,Infinity, 0)
    curveGeoAlt.addGroup(0,Infinity, 1)
    curveGeoAlt.addGroup(0,Infinity, 2)
@@ -112,7 +122,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     {rot: new THREE.Vector3(0, 1*Math.PI/2, 0), color: 0x00ff00, shadow: true, showAxis: true, curve: curveGeoAlt, xAxisLabel: 3, reflector: new THREE.Vector3(1,1,1)},
     {rot: new THREE.Vector3(0, 2*Math.PI/2, 0), color: 0xff00ff, shadow: true, showAxis: true, curve: curveGeo, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,1)},
     {rot: new THREE.Vector3(0, 3*Math.PI/2, 0), color: 0xff0000, shadow: true, showAxis: true, curve: curveGeoAlt, xAxisLabel: 3, reflector: new THREE.Vector3(1,1,-1)},
-    {rot: new THREE.Vector3(0,0,+Math.PI/2), color: 0x0000ff, shadow: false, showAxis: false, curve: curveGeo, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,1)},
+    {rot: new THREE.Vector3(0,0,+Math.PI/2), color: 0x0000ff, shadow: false, showAxis: false, curve: curveGeoTop, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,1)},
     {rot: new THREE.Vector3(0,0,-Math.PI/2), skip: true},
   ]
 
@@ -655,14 +665,17 @@ export const createScene = (el : HTMLCanvasElement) => {
       window.removeEventListener('resize', resize);
       renderer.dispose()
     },
-    setFraction(frac) {
-      axees[4].rotation.y = frac * Math.PI/2
+    setFractionalRotation(frac) {
+      axees[4].rotation.y = frac
     },
     setSignal(sig) {
      curveGeo.setPositions(sig);
     },
     setSpectrum(sig) {
      curveGeoAlt.setPositions(sig);
+    },
+    setFractional(sig) {
+     curveGeoTop.setPositions(sig);
     },
     setPolar(p) {
       for(let m of polarMaterials) {

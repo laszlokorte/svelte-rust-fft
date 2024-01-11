@@ -16,6 +16,7 @@ pub struct Signal {
     fft: Arc<dyn Fft<f32>>,
     time: Vec<Complex<f32>>,
     freq: Vec<Complex<f32>>,
+    frac: Vec<Complex<f32>>,
 }
 
 #[wasm_bindgen]
@@ -24,17 +25,12 @@ impl Signal {
         let mut planner = FftPlanner::new();
         let fft = planner.plan_fft_forward(length);
 
-        let time = vec![
-            Complex {
-                re: 0.0f32,
-                im: 0.0f32
-            };
-            length
-        ];
-        let mut freq = time.clone();
+        let time = vec![Complex::default();length];
+        let mut freq = vec![Complex::default();length];
+        let frac = vec![Complex::default();length];
         fft.process(&mut freq);
 
-        Self { fft, time, freq }
+        Self { fft, time, freq, frac }
     }
 
     pub fn get_time(&self) -> *const Complex<f32> {
@@ -43,6 +39,10 @@ impl Signal {
 
     pub fn get_freq(&self) -> *const Complex<f32> {
         self.freq.as_ptr()
+    }
+
+    pub fn get_frac(&self) -> *const Complex<f32> {
+        self.frac.as_ptr()
     }
 
     pub fn get_len(&self) -> usize {
@@ -80,5 +80,8 @@ impl Signal {
             v.re *= scale;
             v.im *= scale;
         }
+    }
+
+    pub fn update_frac(&mut self, _fraction: f32) {
     }
 }
