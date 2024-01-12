@@ -95,31 +95,30 @@ impl Signal {
             do_fft(&self.fft, &self.time, &mut self.frac);
             self.frac.reverse();
         } else {
-            do_fft(&self.fft, &self.time, &mut self.frac);
-        }
 
-        if a > 2.0 {
-            a -= 2.0;
-            self.frac.reverse();
-        }
-        if a > 1.5 {
-            a -= 1.0;
-            do_fft(&self.fft, &self.time, &mut self.frac);
-            self.frac.reverse();
-        }
-        if a < 0.5 {
-            a += 1.0;
-            do_fft(&self.fft, &self.time, &mut self.frac);
-        }
-       
-        let alpha = a * PI / 2.0;
-        let s = PI / (fN + 1.0) / alpha.sin() / 4.0;
-        let t = PI / (fN + 1.0) * (alpha / 2.0).tan() / 4.0;
-        let cs = Complex::<f32>::new(0.0, -1.0 * (1.0 - a) * PI / 4.0).exp() / (s/PI).sqrt();
+            if a > 2.0 {
+                a -= 2.0;
+                self.frac.reverse();
+            }
+            if a > 1.5 {
+                a -= 1.0;
+                do_fft(&self.fft, &self.time, &mut self.frac);
+                self.frac.reverse();
+            }
+            if a < 0.5 {
+                a += 1.0;
+                do_fft(&self.fft, &self.time, &mut self.frac);
+            }
+           
+            let alpha = a * PI / 2.0;
+            let s = PI / (fN + 1.0) / alpha.sin() / 4.0;
+            let t = PI / (fN + 1.0) * (alpha / 2.0).tan() / 4.0;
+            let cs = Complex::<f32>::new(0.0, -1.0 * (1.0 - a) * PI / 4.0).exp() / (s/PI).sqrt();
 
-        let sincArray = (0..(2 * N - 2)).map(|i| -(2.0 * fN - 3.0) + 2.0 * i as f32).map(|x| sinc(x) * 0.5).collect::<Vec<_>>();
+            let sincArray = (0..(2 * N - 2)).map(|i| -(2.0 * fN - 3.0) + 2.0 * i as f32).map(|x| sinc(x) * 0.5).collect::<Vec<_>>();
 
-        let f1 = fast_conv(&self.frac, &sincArray);
+            let f1 = fast_conv(&self.frac, &sincArray);
+        }
 
 
         // Array.from({length: }, (_, i) => -(2 * N - 3) + 2 * i).map(sinc).map(x => complScale(x, 1/2))
