@@ -118,10 +118,33 @@ impl Signal {
             let sincArray = (0..(2 * N - 2)).map(|i| -(2.0 * fN - 3.0) + 2.0 * i as f32).map(|x| sinc(x) * 0.5).collect::<Vec<_>>();
 
             let f1 = fast_conv(&self.frac, &sincArray);
+            ifft(f1);
+            f1.reverse();
+            f1.slice(N, 2 * N - 1);
+
+
+            let chrpA = (0..(2 * N - 1)).map(|i| -fN + 1.0 + i as f32).map(|x| Complex::<f32>::new(0.0, -1.0 * t * x*x).exp());
+            let chrpB = (0..(4 * N - 1)).map(|i| -(2.0 * fN - 1.0) + i as f32).map(|x| Complex::<f32>::new(0.0, 1.0 * s * x*x).exp());
+
+            let l0 = arrayMod(chrpA, 2, 0);
+            let l1 = arrayMod(chrpA, 2, 1);
+            let e1 = arrayMod(chrpB, 2, 0);
+            let e0 = arrayMod(chrpB, 2, 1);
+
+
+            let f0m = complZipArrays(self.frac, l0, complMul);
+            let f1m = complZipArrays(f1, l1, complMul);
+            let f0c = fast_conv(f0m, e0);
+            let f1c = fast_conv(f1m, e1);
+
+            let h0 = complZipArrays(f0c, f1c, complAdd);
+            ifft(h0);
+
+            for (i, l) in l0.enumerate() {
+                self.frac[i] = complMul(cs, l, h0[N + i]) * f32::sqrt(fN)
+            }
         }
 
-
-        // Array.from({length: }, (_, i) => -(2 * N - 3) + 2 * i).map(sinc).map(x => complScale(x, 1/2))
 
         // const alpha = a * Math.PI / 2;
         // const s = Math.PI / (N + 1) / Math.sin(alpha) / 4;
@@ -132,6 +155,9 @@ impl Signal {
 
         // const f1 = ifft(fconv(f0, sincArry)).reverse().slice(N, 2 * N - 1);
         
+
+        //---
+
         // const chrpA = Array.from({length: 2 * N - 1}, (_, i) => complExp(compl(0, -1 * t * Math.pow(-N + 1 + i, 2))));
         // const l0 = arrayMod(chrpA, 2, 0)
         // const l1 = arrayMod(chrpA, 2, 1)
