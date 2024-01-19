@@ -13,7 +13,7 @@
   
   const decimalFormat = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   const intFormat = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0, signDisplay: 'exceptZero' })
-  const samples = 1024
+  const samples = 2048
   const signal = Signal.new(samples)
 
   const maxFreq = samples/2
@@ -30,7 +30,6 @@
   let timeStretch = 0
   let circular = false
   const customRecording = new Float32Array(2*signal.get_len())
-  customRecording.fill(0)
   const timeDomain = new Float32Array(wasm.memory.buffer, signal.get_time(), 2*signal.get_len())
   const freqDomain = new Float32Array(wasm.memory.buffer, signal.get_freq(), 2*signal.get_len())
   const fracDomain = new Float32Array(wasm.memory.buffer, signal.get_frac(), 2*signal.get_len())
@@ -39,19 +38,23 @@
 		return x==0?1:Math.sin((Math.PI/2)*x)/((Math.PI/2)*x)
 	}
 
-	let r, rx, ry, ra, rc = 0, rbs
+	let r = 0, rx, ry, ra, rc = 0, rbs
+	let recField
 	function record(evt) {
-		let x = (evt.clientX - evt.currentTarget.offsetLeft) / evt.currentTarget.offsetWidth
-		let y = (evt.clientY - evt.currentTarget.offsetTop) / evt.currentTarget.offsetHeight
+		if(!recField) return
+		let x = (evt.clientX - recField.offsetLeft) / recField.offsetWidth
+		let y = (evt.clientY - recField.offsetTop) / recField.offsetHeight
 
 		rx = 2*(x*2 - 1)
 		ry = -2*(y*2 - 1)
 	}
 
 	function recordClear() {
+		r = samples/2
 		customRecording.fill(0);
 		customRecording[0] = 0
 	}
+	recordClear()
 
 	function recordDo() {
 		r = (r+1)%samples;
@@ -68,7 +71,6 @@
 	function recordStart(evt) {
 		if(rc++ > 0) return
 		rbs |= (1<<evt.button)
-		r = samples/2
 		recordDo()
 	}
 
@@ -149,6 +151,8 @@
   	}
   }
 
+  $: paintPath = customRecording.reduce((acc, n, i) => acc+(i%2==0?' ':',')+decimalFormat.format(n), "").replace(/(^(0\.00,0\.00 )*|( 0\.00,0\.00)*$)/g,'').split(/[\s^](?:0\.00,0\.00 )*0\.00,0\.00/, 2).reverse().join()
+
   onMount(() => {
     scene = createScene(el)
 
@@ -156,7 +160,7 @@
   });
 </script>
 
-<svelte:window on:mouseup={recordStop} on:keydown={(evt) => {snap = !evt.ctrlKey}} on:keyup={(evt) => {snap = !evt.ctrlKey}} />
+<svelte:window on:mousemove={record} on:mouseup={recordStop} on:keydown={(evt) => {snap = !evt.ctrlKey}} on:keyup={(evt) => {snap = !evt.ctrlKey}} />
 
 <style>
 	:global(body) {
@@ -282,11 +286,14 @@
 
 				</div>
 				{:else}
-				<div class="recorder" on:mousemove={record} on:contextmenu|preventDefault on:mousedown={recordStart}>
-					<span>Click and<br>Drag here</span>
+				<div bind:this={recField} class="recorder" on:contextmenu|preventDefault on:mousedown={recordStart}>
+					{#if paintPath != ''}
 					<svg viewBox="-2 -2 4 4" width="100" height="100">
-						<polygon transform="rotate(-90, 0, 0)" points={customRecording.reduce((acc, n, i) => acc+(i%2==0?' ':',')+n, "0,0")} fill="none" stroke-width="0.04" stroke="white" />
+						<polyline transform="rotate(-90, 0, 0)" points={paintPath} fill="none" stroke-width="0.04" stroke="white" />
 					</svg>
+					{:else}
+					<span>Click and<br>Drag here</span>
+					{/if}
 				</div>
 				{/if}
 				
