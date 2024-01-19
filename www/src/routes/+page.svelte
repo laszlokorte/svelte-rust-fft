@@ -48,6 +48,11 @@
 		ry = -2*(y*2 - 1)
 	}
 
+	function recordClear() {
+		customRecording.fill(0);
+		customRecording[0] = 0
+	}
+
 	function recordDo() {
 		r = (r+1)%samples;
 		ra = requestAnimationFrame(recordDo)
@@ -209,13 +214,24 @@
 		background: #000a;
 		border: 2px solid #fffa;
 		display: grid;
-		align-content: center;
-		justify-content: center;
+		align-content: stretch;
+		justify-content: stretch;
 	}
 
 	.recorder > * {
 		pointer-events: none;
 		user-select: none;
+		opacity: 0.4;
+		grid-column: 1 / span 1; 
+		grid-row: 1 / span 1;
+		align-self: stretch; 
+		justify-self: stretch;
+		text-align: center;  
+		display: grid;
+	  align-content: center;
+	  justify-content: center;
+	  width: 100%;
+	  height: 100%;
 	}
 </style>
 
@@ -231,10 +247,13 @@
 						{#each Object.keys(shapes) as s}
 					<option value={s}>{s}</option>
 						{/each}
-					<option value={""}>Custom</option>
+					<option value={""}>custom</option>
 					</select>
 					{#if !!transformPairs[shape]}
 					<button type="button" on:click={swapShape} style="cursor: pointer;">⊶ {transformPairs[shape]}</button> 
+					{/if}
+					{#if !shape}
+					<button type="button" on:click={recordClear} style="cursor: pointer;">clear</button> 
 					{/if}
 				</span>
 				{#if shape}
@@ -265,6 +284,9 @@
 				{:else}
 				<div class="recorder" on:mousemove={record} on:contextmenu|preventDefault on:mousedown={recordStart}>
 					<span>Click and<br>Drag here</span>
+					<svg viewBox="-2 -2 4 4" width="100" height="100">
+						<polygon transform="rotate(-90, 0, 0)" points={customRecording.reduce((acc, n, i) => acc+(i%2==0?' ':',')+n, "0,0")} fill="none" stroke-width="0.04" stroke="white" />
+					</svg>
 				</div>
 				{/if}
 				
