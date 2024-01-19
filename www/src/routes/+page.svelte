@@ -29,6 +29,8 @@
   let timeShift = 0
   let timeStretch = 0
   let circular = false
+  const customRecording = new Float32Array(2*signal.get_len())
+  customRecording.fill(0)
   const timeDomain = new Float32Array(wasm.memory.buffer, signal.get_time(), 2*signal.get_len())
   const freqDomain = new Float32Array(wasm.memory.buffer, signal.get_freq(), 2*signal.get_len())
   const fracDomain = new Float32Array(wasm.memory.buffer, signal.get_frac(), 2*signal.get_len())
@@ -37,6 +39,41 @@
 		return x==0?1:Math.sin((Math.PI/2)*x)/((Math.PI/2)*x)
 	}
 
+	let r, rx, ry, ra, rc = 0, rbs
+	function record(evt) {
+		let x = (evt.clientX - evt.currentTarget.offsetLeft) / evt.currentTarget.offsetWidth
+		let y = (evt.clientY - evt.currentTarget.offsetTop) / evt.currentTarget.offsetHeight
+
+		rx = 2*(x*2 - 1)
+		ry = -2*(y*2 - 1)
+	}
+
+	function recordDo() {
+		r = (r+1)%samples;
+		ra = requestAnimationFrame(recordDo)
+		if((rbs & 4) == 4) {
+			customRecording[2*r] = Math.sign(ry) * Math.sqrt(Math.abs(ry))
+			customRecording[2*r+1] = Math.sign(rx) * Math.sqrt(Math.abs(rx))
+		} else {
+			customRecording[2*r] = ry
+			customRecording[2*r+1] = rx
+		}
+	}
+
+	function recordStart(evt) {
+		if(rc++ > 0) return
+		rbs |= (1<<evt.button)
+		r = samples/2
+		recordDo()
+	}
+
+	function recordStop(evt) {
+		if(rc < 1) return
+		rbs = rbs & ~(1<<evt.button)
+		if(--rc > 0) return
+		cancelAnimationFrame(ra)
+		ra = null
+	}
 
   const shapes = {
   	constant: (x) => 1,
@@ -80,13 +117,20 @@
   }
 
   $: if(scene) {
-  	for(let i=0;i<samples;i++) {
-  		const t = (i/samples-0.5);
-  		const mag = amplitude*shapes[shape](timeStetchExp*t*16, samples/(timeStetchExp*16))
-  		const phi = Math.PI*2*(freq*2*t+phase/360)
+  	if(shape !== "") {
+	  	for(let i=0;i<samples;i++) {
+	  		const t = (i/samples-0.5);
+	  		const mag = amplitude*shapes[shape](timeStetchExp*t*16, samples/(timeStetchExp*16))
+	  		const phi = Math.PI*2*(freq*2*t+phase/360)
 
-  		timeDomain[(2*i+2*timeShift+samples*2)%(samples*2)] = mag * Math.cos(phi)
-  		timeDomain[(2*i+1+2*timeShift+samples*2)%(samples*2)] =  mag * Math.sin(phi)
+	  		timeDomain[(2*i+2*timeShift+samples*2)%(samples*2)] = mag * Math.cos(phi)
+	  		timeDomain[(2*i+1+2*timeShift+samples*2)%(samples*2)] =  mag * Math.sin(phi)
+	  	}
+  	} else {
+  		for(let i=0;i<samples;i++) {
+  			timeDomain[2*i] = customRecording[2*i]
+  			timeDomain[2*i+1] = customRecording[2*i+1]
+  		}
   	}
 
   	signal.update_freq()
@@ -107,7 +151,7 @@
   });
 </script>
 
-<svelte:window on:keydown={(evt) => {snap = !evt.ctrlKey}} on:keyup={(evt) => {snap = !evt.ctrlKey}} />
+<svelte:window on:mouseup={recordStop} on:keydown={(evt) => {snap = !evt.ctrlKey}} on:keyup={(evt) => {snap = !evt.ctrlKey}} />
 
 <style>
 	:global(body) {
@@ -158,6 +202,21 @@
 	input {
 		accent-color: white;
 	}
+
+	.recorder {
+		width: 100%;
+		aspect-ratio: 1;
+		background: #000a;
+		border: 2px solid #fffa;
+		display: grid;
+		align-content: center;
+		justify-content: center;
+	}
+
+	.recorder > * {
+		pointer-events: none;
+		user-select: none;
+	}
 </style>
 
 <div class="container">
@@ -169,34 +228,46 @@
 				<label for="signal_shape">Shape:</label><br>
 				<span style:display="flex" style:gap="0.2em">
 					<select id="signal_shape" bind:value={shape}>
-						{#each Object.keys(shapes) as shape}
-					<option value={shape}>{shape}</option>
+						{#each Object.keys(shapes) as s}
+					<option value={s}>{s}</option>
 						{/each}
+					<option value={""}>Custom</option>
 					</select>
 					{#if !!transformPairs[shape]}
 					<button type="button" on:click={swapShape} style="cursor: pointer;">⊶ {transformPairs[shape]}</button> 
 					{/if}
 				</span>
-				<br>
-			<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Amplitude:  <output>{decimalFormat.format(amplitude)}</output></span>
-				<input list={snap?"ampl-list":null} type="range" min="0" max="2" step="0.01" bind:value={amplitude} name=""></label><br>
-				<hr>
-				<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Time Shift: <output>{intFormat.format(timeShift)}</output></span>
-					<input list={snap?"freq-list":null} type="range" min="-{samples*3/4}" max="{samples*3/4}" step="1" bind:value={timeShift} name="">
-				</label>
-				<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Time Stretch: <output>{(snap?intFormat:decimalFormat).format(timeStretch)}</output></span>
-					<input type="range" min="-5" max="5" step={snap?1:0.01} bind:value={timeStretch} name="">
-				</label>
+				{#if shape}
+				<div>
+					
+					<br>
+					<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Amplitude:  <output>{decimalFormat.format(amplitude)}</output></span>
+						<input list={snap?"ampl-list":null} type="range" min="0" max="2" step="0.01" bind:value={amplitude} name=""></label><br>
+						<hr>
+						<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Time Shift: <output>{intFormat.format(timeShift)}</output></span>
+							<input list={snap?"freq-list":null} type="range" min="-{samples*3/4}" max="{samples*3/4}" step="1" bind:value={timeShift} name="">
+						</label>
+						<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Time Stretch: <output>{(snap?intFormat:decimalFormat).format(timeStretch)}</output></span>
+							<input type="range" min="-5" max="5" step={snap?1:0.01} bind:value={timeStretch} name="">
+						</label>
 
-			<hr>
+					<hr>
 
-			<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Linear Phase:  <output>{intFormat.format(freq)}</output> </span>
+					<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Linear Phase:  <output>{intFormat.format(freq)}</output> </span>
 
-				<input list={snap?"freq-list":null} type="range" min="-{maxFreq*3/4}" max="{maxFreq*3/4}" step="1" bind:value={freq} name=""></label>
-			<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Constant Phase: <output>{intFormat.format(phase)}°</output> </span>
+						<input list={snap?"freq-list":null} type="range" min="-{maxFreq*3/4}" max="{maxFreq*3/4}" step="1" bind:value={freq} name=""></label>
+					<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Constant Phase: <output>{intFormat.format(phase)}°</output> </span>
 
-				<input list={snap?"phase-list":null} type="range" min="-180" max="180" step="5" bind:value={phase} name=""></label>
+						<input list={snap?"phase-list":null} type="range" min="-180" max="180" step="5" bind:value={phase} name=""></label>
 
+
+				</div>
+				{:else}
+				<div class="recorder" on:mousemove={record} on:contextmenu|preventDefault on:mousedown={recordStart}>
+					<span>Click and<br>Drag here</span>
+				</div>
+				{/if}
+				
 			<hr>
 
 			<label>
