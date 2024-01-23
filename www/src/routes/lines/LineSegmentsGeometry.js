@@ -169,7 +169,7 @@ class LineSegmentsGeometry extends InstancedBufferGeometry {
     const newLength = array.length
     if (this.prevLength) {
       if (this.prevLength > array.length) {
-        array.push(...Array(this.prevLength - array.length).fill(0))
+        array = [...array, ...Array(this.prevLength - array.length).fill(0)]
       }
     }
     this.prevLength = array.length

@@ -9,11 +9,10 @@
   import * as wasm   from 'fftwasm/fftwasm_bg.wasm'
 
   __wbg_set_wasm(wasm)
-  
-  
+
   const decimalFormat = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   const intFormat = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0, signDisplay: 'exceptZero' })
-  const samples = 2048
+  const samples = 1024
   const signal = Signal.new(samples)
 
   const maxFreq = samples/2
@@ -25,14 +24,14 @@
   let freq = 0
   let phase = 0
   let amplitude = 1
-  let shape = 'constant'
+  let shape = 'gauss'
   let timeShift = 0
   let timeStretch = 0
   let circular = false
   const customRecording = new Float32Array(2*signal.get_len())
-  const timeDomain = new Float32Array(wasm.memory.buffer, signal.get_time(), 2*signal.get_len())
-  const freqDomain = new Float32Array(wasm.memory.buffer, signal.get_freq(), 2*signal.get_len())
-  const fracDomain = new Float32Array(wasm.memory.buffer, signal.get_frac(), 2*signal.get_len())
+  let timeDomain = new Float32Array(wasm.memory.buffer, signal.get_time(), 2*signal.get_len())
+  let freqDomain = new Float32Array(wasm.memory.buffer, signal.get_freq(), 2*signal.get_len())
+  let fracDomain = new Float32Array(wasm.memory.buffer, signal.get_frac(), 2*signal.get_len())
 
 	function sinc(x) {
 		return x==0?1:Math.sin((Math.PI/2)*x)/((Math.PI/2)*x)
@@ -117,13 +116,18 @@
 
   $: timeStetchExp = Math.pow(2,timeStretch+2)
 
+
   $: if(scene) {
+
+	  timeDomain = new Float32Array(wasm.memory.buffer, signal.get_time(), 2*signal.get_len())
+	  freqDomain = new Float32Array(wasm.memory.buffer, signal.get_freq(), 2*signal.get_len())
+	  fracDomain = new Float32Array(wasm.memory.buffer, signal.get_frac(), 2*signal.get_len())
+
+
   	scene.setSignal(timeDomain)
   	scene.setSpectrum(freqDomain)
   	scene.setFractional(fracDomain)
-  }
 
-  $: if(scene) {
   	if(shape !== "") {
 	  	for(let i=0;i<samples;i++) {
 	  		const t = (i/samples-0.5);
@@ -143,12 +147,29 @@
   	signal.update_freq()
   	signal.update_frac(fraction)
 
+
+
+	  timeDomain = new Float32Array(wasm.memory.buffer, signal.get_time(), 2*signal.get_len())
+	  freqDomain = new Float32Array(wasm.memory.buffer, signal.get_freq(), 2*signal.get_len())
+	  fracDomain = new Float32Array(wasm.memory.buffer, signal.get_frac(), 2*signal.get_len())
+
+	  
+  	scene.setSignal(timeDomain)
+  	scene.setSpectrum(freqDomain)
+  	scene.setFractional(fracDomain)
+
   	scene.setFractionalRotation(fraction * Math.PI/2)
   }
   $: {
   	if(scene) {
   		scene.setPolar(circular)
   	}
+  }
+
+  $: if(scene) {
+  	scene.setSignal(timeDomain)
+  	scene.setSpectrum(freqDomain)
+  	scene.setFractional(fracDomain)
   }
 
   $: paintPath = customRecording.reduce((acc, n, i) => acc+(i%2==0?' ':',')+decimalFormat.format(n), "").replace(/(^(0\.00,0\.00 )*|( 0\.00,0\.00)*$)/g,'').split(/[\s^](?:0\.00,0\.00 )*0\.00,0\.00/, 2).reverse().join()
@@ -251,6 +272,7 @@
 						{#each Object.keys(shapes) as s}
 					<option value={s}>{s}</option>
 						{/each}
+					<option value={"---"} disabled="disabled">---</option>
 					<option value={""}>custom</option>
 					</select>
 					{#if !!transformPairs[shape]}
@@ -301,8 +323,8 @@
 
 			<label>
 				<span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Fractional Transform: </span>
-				<input list={snap?"frac-list":null} type="range" min="-4" max="4" step="0.1" bind:value={fraction} name=""></label>
-
+				<input list={snap?"frac-list":null} type="range" min="-4" max="4" step="0.01" bind:value={fraction} name=""></label>
+				{decimalFormat.format(fraction)}
 			<hr>
 			<strong>View</strong><br>
 			<label><input type="checkbox" bind:checked={circular}> Circular</label>
