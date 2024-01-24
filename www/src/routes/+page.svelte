@@ -11,8 +11,9 @@
   __wbg_set_wasm(wasm)
 
   const decimalFormat = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const decimalFormatSigned = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: 'exceptZero' })
   const intFormat = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0, signDisplay: 'exceptZero' })
-  const samples = 1024
+  const samples = 512
   const signal = Signal.new(samples)
 
   const maxFreq = samples/2
@@ -25,7 +26,7 @@
   let phase = 0
   let amplitude = 1
   let shape = 'rect'
-  let timeShift = 40
+  let timeShift = 0
   let timeStretch = 0
   let circular = false
   const customRecording = new Float32Array(2*signal.get_len())
@@ -56,7 +57,7 @@
 	recordClear()
 
 	function recordDo() {
-		r = (r+1)%samples;
+		r = (r+samples-1)%samples;
 		ra = requestAnimationFrame(recordDo)
 		if((rbs & 4) == 4) {
 			customRecording[2*r] = Math.sign(ry) * Math.sqrt(Math.abs(ry))
@@ -222,6 +223,12 @@
 		border: none;
 		margin: 0.5em 1em;
 		padding: 0;
+		min-width: 12em;
+	}
+
+	hr {
+		border: none;
+		border-bottom: 1px solid #0004;
 	}
 
 	legend {
@@ -260,6 +267,10 @@
 	  width: 100%;
 	  height: 100%;
 	}
+
+	input[type=range] {
+		width: 100%;
+	}
 </style>
 
 <div class="container">
@@ -294,8 +305,8 @@
 						<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Time Shift: <output>{intFormat.format(timeShift)}</output></span>
 							<input list={snap?"freq-list":null} type="range" min="-{samples*3/4}" max="{samples*3/4}" step="1" bind:value={timeShift} name="">
 						</label>
-						<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Time Stretch: <output>{(snap?intFormat:decimalFormat).format(timeStretch)}</output></span>
-							<input type="range" min="-5" max="5" step={snap?1:0.01} bind:value={timeStretch} name="">
+						<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Time Stretch: <output>{((true||snap)?intFormat:decimalFormat).format(timeStretch)}</output></span>
+							<input type="range" min="-5" max="5" step={(true||snap)?1:0.01} bind:value={timeStretch} name="">
 						</label>
 
 					<hr>
@@ -324,9 +335,8 @@
 			<hr>
 
 			<label>
-				<span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Fractional Transform: </span>
+				<span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Fractional DFT: <output>{decimalFormatSigned.format(fraction)}</output></span>
 				<input list={snap?"frac-list":null} type="range" min="-4" max="4" step="0.01" bind:value={fraction} name=""></label>
-				{decimalFormat.format(fraction)}
 			<hr>
 			<strong>View</strong><br>
 			<label><input type="checkbox" bind:checked={circular}> Circular</label>
