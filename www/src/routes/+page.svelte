@@ -94,6 +94,7 @@
   	tri: (x) => Math.abs(((Math.abs(x))%2+2)%2-1),
   	exp: (x) => Math.exp(-Math.abs(x)/(Math.sqrt(2)*0.5)),
   	couchy: (x) => (Math.sqrt(2)*0.5)/(x*x+(Math.sqrt(2)*0.5)),
+  	chirp: (x) => Math.cos(x*x/4*Math.PI),
   }
 
   const transformPairs = {

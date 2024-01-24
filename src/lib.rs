@@ -46,25 +46,6 @@ fn do_fft(fft: &Arc<dyn Fft<f32>>, source: &Vec<Complex<f32>>, mut target: &mut 
     }
 }
 
-fn do_fft_n(fft: &Arc<dyn Fft<f32>>, source: &Vec<Complex<f32>>, mut target: &mut Vec<Complex<f32>>, times: u8) {
-    let len = source.len();
-
-    target.clone_from(source);
-    target.rotate_right(len / 2);
-    for _ in 0..times {
-        fft.process(&mut target);
-    }
-    target.rotate_right(len / 2);
-    let scale_nominator = source.iter().map(|z|z.norm()).max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Less)).unwrap_or(1.0);
-    let scale_denom = target.iter().map(|z|z.norm()).max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Less)).unwrap_or(1.0);
-
-    let scale = if scale_denom != 0.0 { scale_nominator / scale_denom } else {1.0};
-
-    for v in target.iter_mut() {
-        v.re *= scale;
-        v.im *= scale;
-    }
-}
 
 #[wasm_bindgen]
 impl Signal {
@@ -128,7 +109,7 @@ impl Signal {
         let f_n = n as f32;
         // a = a % 4;
 
-        let mut a = fraction.rem_euclid(4.0);
+        let mut a = (fraction + 4.0).rem_euclid(4.0);
         if a == 0.0 {
             self.frac.clone_from(&self.time);
         } else if a == 1.0 {
@@ -142,17 +123,26 @@ impl Signal {
         } else {
             self.frac.clone_from(&self.time);
 
-            if a > 2.0 {
+            let mut do_rev = if a > 2.0 {
                 a -= 2.0;
-                do_fft_n(&self.fft_integer, &self.time, &mut self.frac, 2);
-            }
+                true
+            } else {
+                false
+            };
+
             if a > 1.5 {
                 a -= 1.0;
-                do_fft_n(&self.fft_integer, &self.time, &mut self.frac, 3);
+                do_fft(&self.fft_integer, &self.time, &mut self.frac);
             }
             if a < 0.5 {
                 a += 1.0;
-                do_fft_n(&self.fft_integer, &self.time, &mut self.frac, 1);
+                do_fft(&self.fft_integer, &self.time, &mut self.frac);
+         
+                do_rev = !do_rev;
+            }
+
+            if do_rev {
+                self.frac.reverse();
             }
            
             let alpha = a * PI / 2.0;
