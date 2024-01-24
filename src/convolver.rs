@@ -1,7 +1,7 @@
 use crate::iter_into_slice;
-use rustfft::Fft;
-use rustfft::{num_complex::Complex, FftPlanner};
-use std::sync::Arc;
+use crate::Arc;
+use crate::Fft;
+use crate::{Complex, FftPlanner};
 
 pub struct Convolver {
     fft_conv: Arc<dyn Fft<f32>>,
@@ -11,10 +11,10 @@ pub struct Convolver {
 
 impl Convolver {
     pub fn new(length: usize) -> Self {
-        let mut planner = FftPlanner::new();
-        let fft_conv = planner.plan_fft_forward(length);
         let mut pad_a = vec![Complex::default(); length];
         let mut pad_b = vec![Complex::default(); length];
+        let mut planner = FftPlanner::new();
+        let fft_conv = planner.plan_fft_forward(length);
 
         fft_conv.process(&mut pad_a);
         fft_conv.process(&mut pad_b);
@@ -55,5 +55,9 @@ impl Convolver {
 pub fn conv_length(a_size: usize, b_size: usize) -> usize {
     let n = a_size + b_size - 1;
 
+    next_pow2(n)
+}
+
+fn next_pow2(n: usize) -> usize {
     2 << f32::ceil(f32::log2(n as f32)) as usize
 }

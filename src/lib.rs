@@ -1,7 +1,7 @@
 #![feature(iter_array_chunks)]
 
 mod convolver;
-mod frft;
+pub mod frft;
 mod frft2;
 mod iter;
 mod sinc;
