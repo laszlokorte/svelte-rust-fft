@@ -36,23 +36,22 @@ impl Frft2 {
         }
     }
 
-    pub fn process(&mut self, mut frac: &mut [Complex<f32>], fraction: f32) {
+    pub fn process(&mut self, frac: &mut [Complex<f32>], fraction: f32) {
         let n = frac.len();
         let f_n = n as f32;
 
         let mut a = (fraction + 4.0).rem_euclid(4.0);
 
         if a == 0.0 {
-            return;
         } else if a == 1.0 {
             frac.rotate_right(n / 2);
-            self.fft_integer.process(&mut frac);
+            self.fft_integer.process(frac);
             frac.rotate_right(n / 2);
         } else if a == 2.0 {
             frac.reverse();
         } else if a == 3.0 {
             frac.rotate_right(n / 2);
-            self.fft_integer.process(&mut frac);
+            self.fft_integer.process(frac);
             frac.rotate_right(n / 2);
             frac.reverse();
         } else {
@@ -66,13 +65,13 @@ impl Frft2 {
             if a > 1.5 {
                 a -= 1.0;
                 frac.rotate_right(n / 2);
-                self.fft_integer.process(&mut frac);
+                self.fft_integer.process(frac);
                 frac.rotate_right(n / 2);
             }
             if a < 0.5 {
                 a += 1.0;
                 frac.rotate_right(n / 2);
-                self.fft_integer.process(&mut frac);
+                self.fft_integer.process(frac);
                 frac.rotate_right(n / 2);
 
                 do_rev = !do_rev;
@@ -93,7 +92,7 @@ impl Frft2 {
             //let sinc_len = 2 * n - 1;
 
             self.convolver
-                .conv_spectral((&frac).iter().cloned(), sinc_iter, &mut self.f1);
+                .conv_spectral(frac.iter().cloned(), sinc_iter, &mut self.f1);
 
             //ifft(f1);
             //f1.reverse();
@@ -112,7 +111,7 @@ impl Frft2 {
             let e0 = chirp_b.clone().step_by(2);
             let e1 = chirp_b.skip(1).step_by(2);
 
-            let f0m_iter = (&frac).iter().zip(l0.clone()).map(|(a, b)| a * b);
+            let f0m_iter = frac.iter().zip(l0.clone()).map(|(a, b)| a * b);
             let f1m_iter = f1_slice.iter().zip(l1).map(|(a, b)| a * b);
 
             self.convolver.conv_spectral(f0m_iter, e0, &mut self.f0c);

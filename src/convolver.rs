@@ -20,9 +20,9 @@ impl Convolver {
         fft_conv.process(&mut pad_b);
 
         Self {
-            fft_conv: fft_conv,
-            pad_a: pad_a,
-            pad_b: pad_b,
+            fft_conv,
+            pad_a,
+            pad_b,
         }
     }
 
@@ -47,8 +47,8 @@ impl Convolver {
         )
     }
 
-    pub fn fft(&self, mut signal: &mut [Complex<f32>]) {
-        self.fft_conv.process(&mut signal);
+    pub fn fft(&self, signal: &mut [Complex<f32>]) {
+        self.fft_conv.process(signal);
     }
 }
 

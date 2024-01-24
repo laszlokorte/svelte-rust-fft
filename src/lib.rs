@@ -30,12 +30,12 @@ pub struct Signal {
     frft: Frft2,
 }
 
-fn do_fft(fft: &Arc<dyn Fft<f32>>, source: &Vec<Complex<f32>>, mut target: &mut Vec<Complex<f32>>) {
+fn do_fft(fft: &Arc<dyn Fft<f32>>, source: &Vec<Complex<f32>>, target: &mut Vec<Complex<f32>>) {
     let len = source.len();
 
     target.clone_from(source);
     target.rotate_right(len / 2);
-    fft.process(&mut target);
+    fft.process(target);
     target.rotate_right(len / 2);
     let scale_nominator = source
         .iter()
@@ -66,7 +66,7 @@ impl Signal {
         utils::set_panic_hook();
 
         let sinc_len = 2 * length - 1;
-        let fft_conv_len = conv_length(length, sinc_len);
+        let _fft_conv_len = conv_length(length, sinc_len);
 
         let mut planner = FftPlanner::new();
         let fft_integer = planner.plan_fft_forward(length);
@@ -112,13 +112,15 @@ impl Signal {
         self.frac.clone_from(&self.time);
         self.frft.process(&mut self.frac, fraction);
 
-        let scale_nominator = (&self.time)
+        let scale_nominator = self
+            .time
             .iter()
             .cloned()
             .map(|z| z.norm())
             .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Less))
             .unwrap_or(1.0);
-        let scale_denom = (&self.frac)
+        let scale_denom = self
+            .frac
             .iter()
             .cloned()
             .map(|z| z.norm())
@@ -130,7 +132,7 @@ impl Signal {
             1.0
         };
 
-        for v in (&mut self.frac).iter_mut() {
+        for v in self.frac.iter_mut() {
             v.re *= scale;
             v.im *= scale;
         }
