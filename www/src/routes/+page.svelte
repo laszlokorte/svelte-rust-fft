@@ -19,12 +19,12 @@
 
   let el;
   let scene = null
-  let snap = true
+  let snap = false
   let fraction = 0
   let freq = 0
   let phase = 0
   let amplitude = 1
-  let shape = 'gauss'
+  let shape = 'rect'
   let timeShift = 0
   let timeStretch = 0
   let circular = false
@@ -117,13 +117,13 @@
 
   $: timeStetchExp = Math.pow(2,timeStretch+2)
 
-
-  $: if(scene) {
-
-	  timeDomain = new Float32Array(wasm.memory.buffer, signal.get_time(), 2*signal.get_len())
+  $: if(timeDomain.byteLength === 0) {
+  	timeDomain = new Float32Array(wasm.memory.buffer, signal.get_time(), 2*signal.get_len())
 	  freqDomain = new Float32Array(wasm.memory.buffer, signal.get_freq(), 2*signal.get_len())
 	  fracDomain = new Float32Array(wasm.memory.buffer, signal.get_frac(), 2*signal.get_len())
+  }
 
+  $: if(scene) {
 
   	scene.setSignal(timeDomain)
   	scene.setSpectrum(freqDomain)
@@ -174,6 +174,7 @@
   }
 
   $: paintPath = customRecording.reduce((acc, n, i) => acc+(i%2==0?' ':',')+decimalFormat.format(n), "").replace(/(^(0\.00,0\.00 )*|( 0\.00,0\.00)*$)/g,'').split(/[\s^](?:0\.00,0\.00 )*0\.00,0\.00/, 2).reverse().join()
+  $: paintPathEmpty = !Array.prototype.some.call(customRecording, (a) => a != 0)
 
   onMount(() => {
     scene = createScene(el)
@@ -310,7 +311,7 @@
 				</div>
 				{:else}
 				<div bind:this={recField} class="recorder" on:contextmenu|preventDefault on:mousedown={recordStart}>
-					{#if paintPath != ''}
+					{#if !paintPathEmpty}
 					<svg viewBox="-2 -2 4 4" width="100" height="100">
 						<polyline transform="rotate(-90, 0, 0)" points={paintPath} fill="none" stroke-width="0.04" stroke="white" />
 					</svg>
