@@ -20,12 +20,12 @@
   let el;
   let scene = null
   let snap = false
-  let fraction = 0.99
+  let fraction = 0
   let freq = 0
   let phase = 0
   let amplitude = 1
   let shape = 'rect'
-  let timeShift = 0
+  let timeShift = 40
   let timeStretch = 0
   let circular = false
   const customRecording = new Float32Array(2*signal.get_len())

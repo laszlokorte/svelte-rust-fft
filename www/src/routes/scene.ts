@@ -91,11 +91,7 @@ export const createScene = (el : HTMLCanvasElement) => {
    const curveGeoTop = new LineSegmentsGeometry(2, 0);
 
    curveGeoTop.setPositions([0,0,0,0])
-   curveGeoAlt.addGroup(0,Infinity, 0)
-   curveGeoAlt.addGroup(0,Infinity, 1)
-   curveGeoAlt.addGroup(0,Infinity, 2)
-   curveGeoAlt.addGroup(0,Infinity, 3)
-   curveGeoAlt.addGroup(0,Infinity, 4)
+   curveGeoTop.addGroup(0,Infinity, 1)
 
 
 
@@ -118,11 +114,11 @@ export const createScene = (el : HTMLCanvasElement) => {
   let polarHide = []
 
   const rotations = [
-    {rot: new THREE.Vector3(0, 0*Math.PI/2, 0), color:  0x00ffff, shadow: true, showAxis: true, curve: curveGeo, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,-1)},
+    {rot: new THREE.Vector3(0, 0*Math.PI/2, 0), color:  0x00ffff, shadow: true, showAxis: true, curve: curveGeo, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,1)},
     {rot: new THREE.Vector3(0, 1*Math.PI/2, 0), color: 0x00ff00, shadow: true, showAxis: true, curve: curveGeoAlt, xAxisLabel: 3, reflector: new THREE.Vector3(1,1,1)},
-    {rot: new THREE.Vector3(0, 2*Math.PI/2, 0), color: 0xff00ff, shadow: true, showAxis: true, curve: curveGeo, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,1)},
+    {rot: new THREE.Vector3(0, 2*Math.PI/2, 0), color: 0xff00ff, shadow: true, showAxis: true, curve: curveGeo, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,-1)},
     {rot: new THREE.Vector3(0, 3*Math.PI/2, 0), color: 0xff0000, shadow: true, showAxis: true, curve: curveGeoAlt, xAxisLabel: 3, reflector: new THREE.Vector3(1,1,-1)},
-    {rot: new THREE.Vector3(0,0,+Math.PI/2), color: 0x0000ff, shadow: false, showAxis: false, curve: curveGeoTop, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,1)},
+    {rot: new THREE.Vector3(0,0,+Math.PI/2), color: 0x0000ff, shadow: true, showAxis: false, curve: curveGeoTop, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,1)},
     {rot: new THREE.Vector3(0,0,-Math.PI/2), skip: true},
   ]
 

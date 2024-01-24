@@ -145,6 +145,7 @@ impl Frft2 {
 
             let mut do_rev = if a > 2.0 {
                 a -= 2.0;
+                frac.rotate_right(1);
                 true
             } else {
                 false
@@ -155,11 +156,16 @@ impl Frft2 {
                 frac.rotate_right(n / 2);
                 self.fft_integer.process(frac);
                 frac.rotate_right(n / 2);
+                frac.rotate_left(1);
 
                 scale_factor /= f_n;
             }
             if a < 0.5 {
                 a += 1.0;
+
+                if do_rev {
+                    frac.rotate_left(1);
+                }
                 frac.rotate_right(n / 2);
                 self.fft_integer.process(frac);
                 frac.rotate_right(n / 2);
@@ -168,14 +174,15 @@ impl Frft2 {
                 do_rev = !do_rev;
 
                 scale_factor *= f_n;
+            } else if do_rev {
+                frac.rotate_left(1);
             }
 
             if do_rev {
-                frac.rotate_left(1);
                 frac.reverse();
+                frac.rotate_right(1);
             }
 
-            frac.rotate_left(1);
 
             let alpha = a * PI / 2.0;
             let s = PI / (f_n + 1.0) / alpha.sin() / 4.0;
