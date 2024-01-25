@@ -29,6 +29,7 @@
   let timeShift = 0
   let timeStretch = 0
   let circular = false
+  let showInfo = false
   const customRecording = new Float32Array(2*signal.get_len())
   let timeDomain = new Float32Array(wasm.memory.buffer, signal.get_time(), 2*signal.get_len())
   let freqDomain = new Float32Array(wasm.memory.buffer, signal.get_freq(), 2*signal.get_len())
@@ -184,7 +185,7 @@
   });
 </script>
 
-<svelte:window on:mousemove={record} on:mouseup={recordStop} on:keydown={(evt) => {snap = !evt.ctrlKey}} on:keyup={(evt) => {snap = !evt.ctrlKey}} />
+<svelte:window on:mousemove={record} on:mouseup={recordStop} />
 
 <style>
 	:global(body) {
@@ -209,7 +210,7 @@
 	.controls {
 		width: min-content;
 		z-index: 10;
-		background: #333a;
+		background: #000a;
 		color: #fff;
 		align-self: start;
 		justify-self: start;
@@ -231,9 +232,19 @@
 		border-bottom: 1px solid #0004;
 	}
 
+	label {
+		user-select: none;
+	}
+
+	output {
+		display: inline-block;
+		width: 4em;
+		margin-left: auto;
+		text-align: right;
+	}
+
 	legend {
 		font-weight: bold;
-		background: #333;
 		margin: 0 0 1em 0;
 		padding: 2px 4px;
 	}
@@ -271,6 +282,40 @@
 	input[type=range] {
 		width: 100%;
 	}
+
+	.checkbox-list {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.info-button {
+		background: none;
+		font: inherit;
+		border: none;
+		color: inherit;
+		text-decoration: underline;
+		cursor: pointer;
+	}
+
+	.help-container {
+		position: absolute;
+		inset: 0;
+		background: #000a;
+		display: grid;
+		place-content: stretch;
+	}
+
+	.help-box {
+		background: #fff;
+		width: 90vw;
+		min-height: 50vh;
+		margin: 4em 1em;
+		display: block;
+		justify-self: center;
+		align-self: start;
+		color: #000;
+		padding: 1em;
+	}
 </style>
 
 <div class="container">
@@ -299,24 +344,24 @@
 				<div>
 					
 					<br>
-					<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Amplitude:  <output>{decimalFormat.format(amplitude)}</output></span>
-						<input list={snap?"ampl-list":null} type="range" min="0" max="2" step="0.01" bind:value={amplitude} name=""></label><br>
+					<label for="control_amplitude"><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Amplitude:  <output>{decimalFormat.format(amplitude)}</output></span>
+						<input list={snap?"ampl-list":null} type="range" min="0" max="2" step="0.01" bind:value={amplitude} id="control_amplitude"></label><br>
 						<hr>
-						<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Time Shift: <output>{intFormat.format(timeShift)}</output></span>
-							<input list={snap?"freq-list":null} type="range" min="-{samples*3/4}" max="{samples*3/4}" step="1" bind:value={timeShift} name="">
+						<label for="control_timeShift"><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Time Shift: <output>{intFormat.format(timeShift)}</output></span>
+							<input list={snap?"freq-list":null} type="range" min="-{samples*3/4}" max="{samples*3/4}" step="1" bind:value={timeShift} id="control_timeShift">
 						</label>
-						<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Time Stretch: <output>{((true||snap)?intFormat:decimalFormat).format(timeStretch)}</output></span>
-							<input type="range" min="-5" max="5" step={(true||snap)?1:0.01} bind:value={timeStretch} name="">
+						<label for="control_timeStretch"><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Time Stretch: <output>{((true||snap)?intFormat:decimalFormat).format(timeStretch)}</output></span>
+							<input type="range" min="-5" max="5" step={(true||snap)?1:0.01} bind:value={timeStretch} id="control_timeStretch">
 						</label>
 
 					<hr>
 
-					<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Linear Phase:  <output>{intFormat.format(freq)}</output> </span>
+					<label for="control_freq"><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Linear Phase:  <output>{intFormat.format(freq)}</output> </span>
 
-						<input list={snap?"freq-list":null} type="range" min="-{maxFreq*3/4}" max="{maxFreq*3/4}" step="1" bind:value={freq} name=""></label>
-					<label><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Constant Phase: <output>{intFormat.format(phase)}°</output> </span>
+						<input list={snap?"freq-list":null} type="range" min="-{maxFreq*3/4}" max="{maxFreq*3/4}" step="1" bind:value={freq} id="control_freq"></label>
+					<label for="control_phase"><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Constant Phase: <output>{intFormat.format(phase)}°</output> </span>
 
-						<input list={snap?"phase-list":null} type="range" min="-180" max="180" step="5" bind:value={phase} name=""></label>
+						<input list={snap?"phase-list":null} type="range" min="-180" max="180" step="5" bind:value={phase} id="control_phase"></label>
 
 
 				</div>
@@ -334,13 +379,18 @@
 				
 			<hr>
 
-			<label>
+			<label for="control_fraction">
 				<span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Fractional DFT: <output>{decimalFormatSigned.format(fraction)}</output></span>
-				<input list={snap?"frac-list":null} type="range" min="-4" max="4" step="0.01" bind:value={fraction} name=""></label>
+				<input list={snap?"frac-list":null} type="range" min="-4" max="4" step="0.01" bind:value={fraction} id="control_fraction"></label>
 			<hr>
 			<strong>View</strong><br>
-			<label><input type="checkbox" bind:checked={circular}> Circular</label>
+			<div class="checkbox-list">
+				<label><input type="checkbox" bind:checked={circular}> Circular</label>
+				<label><input type="checkbox" bind:checked={snap}> Snap Controls</label>
+			</div>
+			<hr>
 
+			<button class="info-button" on:click={() => showInfo = true} on:keydown={() => showInfo = true}>Info</button>
 
 			<datalist id="ampl-list">
 				<option>0</option>
@@ -361,5 +411,23 @@
 				<option>-4</option>
 			</datalist>
 		</fieldset>
+
+		{#if showInfo}
+		<div class="help-container" on:click={() => showInfo = false}>
+			<div class="help-box" on:click|stopPropagation>
+				<button class="info-button" on:click={() => showInfo = false} on:keydown={() => showInfo = false}>Close</button>
+
+				<h2>Discrete Fourier Transform</h2>
+				<p>
+					Hello
+				</p>
+				<h3>Fourier Transform Pairs</h3>
+
+				<h3>Fractional Fourier Transform</h3>
+
+			</div>
+
+		</div>
+		{/if}
 	</div>
 </div>
