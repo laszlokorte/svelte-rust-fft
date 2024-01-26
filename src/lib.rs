@@ -5,6 +5,7 @@ pub mod frft;
 mod frft2;
 mod iter;
 mod sinc;
+pub mod sinc_interp;
 mod utils;
 
 use crate::convolver::conv_length;
