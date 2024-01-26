@@ -20,6 +20,7 @@
   const maxFreq = samples/2
 
   let el;
+  let controlPanel;
   let scene = null
   let snap = false
   let fraction = 0
@@ -175,7 +176,7 @@
   $: paintPathEmpty = !Array.prototype.some.call(customRecording, (a) => a != 0)
 
   onMount(() => {
-    scene = createScene(el)
+    scene = createScene(el, controlPanel)
 
     return scene.dispose
   });
@@ -190,8 +191,7 @@
 	}
 
 	.canvas {
-		position: absolute;
-		inset: 0;
+		grid-area: canvas;
 		display: block;
 	}
 
@@ -200,8 +200,10 @@
 		inset: 0;
 		display: block;
 		display: grid;
-		grid-template: 1fr;
+		grid-template-columns: [canvas-start controls-start] 1fr [controls-end] 10fr [canvas-end];
+		grid-template-rows: [controls-start canvas-start] 1fr [controls-end canvas-end];
 		background: #dffaff;
+		place-content: stretch;
 	}
 
 	.controls {
@@ -217,6 +219,7 @@
 		font-size: 1.2em;
 		max-height: 80vh;
 		overflow: auto;
+		grid-area: controls;
 	}
 
 	fieldset {
@@ -323,7 +326,7 @@
 
 <div class="container">
 	<canvas class="canvas" bind:this={el}></canvas>
-	<div class="controls">
+	<div class="controls" bind:this={controlPanel}>
 		<fieldset>
 			<legend style="white-space: nowrap;">Discrete Fourier<br>Transform</legend>
 

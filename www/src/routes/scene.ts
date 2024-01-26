@@ -5,13 +5,13 @@ import {LineMaterial} from './lines/LineMaterial.js'
 import {LineSegmentsGeometry} from './lines/LineSegmentsGeometry.js'
 import { DecalGeometry } from 'three/addons/geometries/DecalGeometry';
 
-export const createScene = (el : HTMLCanvasElement) => {
+export const createScene = (el : HTMLCanvasElement, overlayEl: HTMLElement) => {
 
 
   const labelsTextures = ["Re","Im","t","f"].map((l) => {
     const ctx = document.createElement('canvas').getContext('2d');
     if(ctx) {
-      const texRes = 128
+      const texRes = 64
       ctx.canvas.width = texRes;
       ctx.canvas.height = texRes;
       ctx.translate(texRes/2,texRes/2)
@@ -19,10 +19,11 @@ export const createScene = (el : HTMLCanvasElement) => {
       ctx.translate(0,texRes/4)
 
       ctx.fillStyle = '#000';
+      ctx.imageSmoothingEnabled= false
       ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
       ctx.textAlign = "center"; 
       ctx.fillStyle = '#fff';
-      ctx.font = Math.round(texRes*0.8) + "px Georgia"
+      ctx.font = Math.round(texRes*0.75) + "px monospace"
       ctx.fillText(l,0,0)
       return new THREE.CanvasTexture(ctx.canvas);
     }
@@ -645,6 +646,7 @@ export const createScene = (el : HTMLCanvasElement) => {
     renderer.setPixelRatio(window.devicePixelRatio);
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
+    camera.setViewOffset(window.innerWidth-overlayEl.offsetWidth, window.innerHeight, -overlayEl.offsetWidth, 0, window.innerWidth, window.innerHeight );
     controls.zoomSpeed = 2*window.devicePixelRatio;
 
     for(let lm of lineMats) {
