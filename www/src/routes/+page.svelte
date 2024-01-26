@@ -117,17 +117,7 @@
 
   $: timeStetchExp = Math.pow(2,timeStretch+2)
 
-  $: if(timeDomain.byteLength === 0) {
-  	timeDomain = new Float32Array(wasm.memory.buffer, signal.get_time(), 2*signal.get_len())
-	  freqDomain = new Float32Array(wasm.memory.buffer, signal.get_freq(), 2*signal.get_len())
-	  fracDomain = new Float32Array(wasm.memory.buffer, signal.get_frac(), 2*signal.get_len())
-  }
-
   $: if(scene) {
-
-  	scene.setSignal(timeDomain)
-  	scene.setSpectrum(freqDomain)
-  	scene.setFractional(fracDomain)
 
   	if(shape !== "") {
 	  	for(let i=0;i<samples;i++) {
@@ -148,19 +138,21 @@
   	signal.update_freq()
   	signal.update_frac(fraction)
 
-
-
-	  timeDomain = new Float32Array(wasm.memory.buffer, signal.get_time(), 2*signal.get_len())
-	  freqDomain = new Float32Array(wasm.memory.buffer, signal.get_freq(), 2*signal.get_len())
-	  fracDomain = new Float32Array(wasm.memory.buffer, signal.get_frac(), 2*signal.get_len())
-
-	  
-  	scene.setSignal(timeDomain)
-  	scene.setSpectrum(freqDomain)
-  	scene.setFractional(fracDomain)
-
   	scene.setFractionalRotation(fraction * Math.PI/2)
   }
+
+  $: {
+  	if(timeDomain.byteLength === 0) {
+	  	timeDomain = new Float32Array(wasm.memory.buffer, signal.get_time(), 2*signal.get_len())
+		  freqDomain = new Float32Array(wasm.memory.buffer, signal.get_freq(), 2*signal.get_len())
+		  fracDomain = new Float32Array(wasm.memory.buffer, signal.get_frac(), 2*signal.get_len())
+	  	
+	  	scene.setSignal(timeDomain)
+	  	scene.setSpectrum(freqDomain)
+	  	scene.setFractional(fracDomain)
+	  }
+  }
+
   $: {
   	if(scene) {
   		scene.setPolar(circular)
@@ -173,7 +165,14 @@
   	scene.setFractional(fracDomain)
   }
 
-  $: paintPath = customRecording.reduce((acc, n, i) => acc+(i%2==0?' ':',')+decimalFormat.format(n), "").replace(/(^(0\.00,0\.00 )*|( 0\.00,0\.00)*$)/g,'').split(/[\s^](?:0\.00,0\.00 )*0\.00,0\.00/, 2).reverse().join()
+  function getPathA(cx,r){
+	  return "M" + cx + ",";
+	}
+  function getPathB(cy,r){
+	  return cy + "m" + (-r) + ",0a" + r + "," + r + " 0 1,0 " + (r * 2) + ",0a" + r + "," + r + " 0 1,0 " + (-r * 2) + ",0";
+	}
+
+  $: paintPath = customRecording.reduce((acc, n, i) => acc+(i%2==0?getPathA(n,.03):getPathB(n,.03)),"")
   $: paintPathEmpty = !Array.prototype.some.call(customRecording, (a) => a != 0)
 
   onMount(() => {
@@ -369,7 +368,7 @@
 				<div role="presentation" bind:this={recField} class="recorder" on:contextmenu|preventDefault on:mousedown={recordStart}>
 					{#if !paintPathEmpty}
 					<svg viewBox="-2 -2 4 4" width="100" height="100">
-						<polyline transform="rotate(-90, 0, 0)" points={paintPath} fill="none" stroke-width="0.04" stroke="white" />
+						<path transform="rotate(-90, 0, 0)" d={paintPath} fill="white" stroke="none" />
 					</svg>
 					{:else}
 					<span>Click and<br>Drag here</span>
