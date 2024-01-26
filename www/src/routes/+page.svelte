@@ -1,5 +1,5 @@
 <svelte:head>
-	<title>Fourier Cube</title>
+	<title>Fractional Discrete Fourier Transform</title>
 </svelte:head>
 
 <script>
@@ -263,6 +263,7 @@
 		display: grid;
 		align-content: stretch;
 		justify-content: stretch;
+		margin-top: 0.5em;
 	}
 
 	.recorder > * {
@@ -322,13 +323,18 @@
 		max-height: 60vh;
 		overflow: auto;
 	}
+
+	select, button {
+		font: inherit;
+		font-size: inherit;
+	}
 </style>
 
 <div class="container">
 	<canvas class="canvas" bind:this={el}></canvas>
 	<div class="controls" bind:this={controlPanel}>
 		<fieldset>
-			<legend style="white-space: nowrap;">Discrete Fourier<br>Transform</legend>
+			<legend style="white-space: nowrap;">Fractional Discrete <br>Fourier Transform</legend>
 
 				<label for="signal_shape">Shape:</label><br>
 				<span style:display="flex" style:gap="0.2em">
