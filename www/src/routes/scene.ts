@@ -642,8 +642,10 @@ export const createScene = (el : HTMLCanvasElement) => {
 
   const resize = () => {
     renderer.setSize(window.innerWidth, window.innerHeight)
+    renderer.setPixelRatio(window.devicePixelRatio);
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
+    controls.zoomSpeed = 2*window.devicePixelRatio;
 
     for(let lm of lineMats) {
       lm.resolution.set(window.innerWidth, window.innerHeight);

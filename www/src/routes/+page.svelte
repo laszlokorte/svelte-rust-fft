@@ -15,6 +15,7 @@
   const intFormat = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0, signDisplay: 'exceptZero' })
   const samples = 512
   const signal = Signal.new(samples)
+  const customRecording = new Float32Array(2*signal.get_len())
 
   const maxFreq = samples/2
 
@@ -30,7 +31,6 @@
   let timeStretch = 0
   let circular = false
   let showInfo = false
-  const customRecording = new Float32Array(2*signal.get_len())
   let timeDomain = new Float32Array(wasm.memory.buffer, signal.get_time(), 2*signal.get_len())
   let freqDomain = new Float32Array(wasm.memory.buffer, signal.get_freq(), 2*signal.get_len())
   let fracDomain = new Float32Array(wasm.memory.buffer, signal.get_frac(), 2*signal.get_len())
@@ -118,7 +118,6 @@
   $: timeStetchExp = Math.pow(2,timeStretch+2)
 
   $: if(scene) {
-
   	if(shape !== "") {
 	  	for(let i=0;i<samples;i++) {
 	  		const t = (i/samples-0.5);
@@ -187,6 +186,7 @@
 <style>
 	:global(body) {
 		margin: 0;
+		overflow: hidden;
 	}
 
 	.canvas {
@@ -215,6 +215,8 @@
 		padding: 1em;
 		font-family: monospace;
 		font-size: 1.2em;
+		max-height: 80vh;
+		overflow: auto;
 	}
 
 	fieldset {
@@ -286,6 +288,8 @@
 	}
 
 	.info-button {
+		display: inline-block;
+		padding: 0.2em;
 		background: none;
 		font: inherit;
 		border: none;
@@ -389,7 +393,9 @@
 			</div>
 			<hr>
 
-			<button type="button" class="info-button" on:click={() => showInfo = true} on:keydown={() => showInfo = true}>Info</button>
+			<small>&sdot;<button type="button" class="info-button" on:click={() => showInfo = true} on:keydown={() => showInfo = true}>Info</button></small>
+			<br>
+			<small>&sdot;<a class="info-button" href="//tools.laszlokorte.de" target="_blank">More educational tools</a></small>
 
 			<datalist id="ampl-list">
 				<option>0</option>
