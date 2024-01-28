@@ -5,7 +5,7 @@ import {LineMaterial} from './lines/LineMaterial.js'
 import {LineSegmentsGeometry} from './lines/LineSegmentsGeometry.js'
 import { DecalGeometry } from 'three/addons/geometries/DecalGeometry';
 
-export const createScene = (el : HTMLCanvasElement, overlayEl: HTMLElement) => {
+export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
 
 
   const labelsTextures = ["Re","Im","t","f"].map((l) => {
@@ -594,7 +594,7 @@ export const createScene = (el : HTMLCanvasElement, overlayEl: HTMLElement) => {
   socket.renderOrder = 0
   scene.add(socket);
 
-  camera.position.x = 20;
+  camera.position.x = 14;
   camera.position.z = 6;
   camera.position.y = 4;
 
@@ -645,9 +645,9 @@ export const createScene = (el : HTMLCanvasElement, overlayEl: HTMLElement) => {
     renderer.setSize(window.innerWidth, window.innerHeight)
     renderer.setPixelRatio(window.devicePixelRatio);
     camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    camera.setViewOffset(window.innerWidth-overlayEl.offsetWidth, window.innerHeight, -overlayEl.offsetWidth, 0, window.innerWidth, window.innerHeight );
+    camera.setViewOffset(camFrame.offsetWidth, camFrame.offsetHeight, -camFrame.offsetLeft, -camFrame.offsetTop, window.innerWidth, window.innerHeight );
     controls.zoomSpeed = 2*window.devicePixelRatio;
+    camera.updateProjectionMatrix();
 
     for(let lm of lineMats) {
       lm.resolution.set(window.innerWidth, window.innerHeight);
