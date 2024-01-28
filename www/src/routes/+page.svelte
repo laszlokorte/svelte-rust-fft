@@ -207,6 +207,7 @@
 		position: fixed;
 		inset: 0;
 		background: #dffaff;
+		background: linear-gradient(#effbff, #cff9ff);
 	}
 
 	.container {
@@ -405,14 +406,14 @@
 							</label>
 
 						<hr>
-
-						<label for="control_freq"><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Linear Phase:  <output>{intFormat.format(freq)}</output> </span>
-
-							<input list={snap?"freq-list":null} type="range" min="-{maxFreq*3/4}" max="{maxFreq*3/4}" step="1" bind:value={freq} id="control_freq"></label>
 						<label for="control_phase"><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Constant Phase: <output>{intFormat.format(phase)}°</output> </span>
 
 							<input list={snap?"phase-list":null} type="range" min="-180" max="180" step="5" bind:value={phase} id="control_phase"></label>
 
+
+						<label for="control_freq"><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Linear Phase:  <output>{intFormat.format(freq)}</output> </span>
+
+							<input list={snap?"freq-list":null} type="range" min="-{maxFreq*3/4}" max="{maxFreq*3/4}" step="1" bind:value={freq} id="control_freq"></label>
 
 					</div>
 					{:else}
