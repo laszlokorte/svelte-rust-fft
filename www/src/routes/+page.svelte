@@ -434,11 +434,11 @@
 						<label for="control_amplitude"><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Amplitude:  <output>{decimalFormat.format(amplitude)}</output></span>
 							<input list={snap?"ampl-list":null} type="range" min="0" max="2" step="0.01" bind:value={amplitude} id="control_amplitude"></label><br>
 							<hr>
-							<label for="control_timeShift"><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Time Shift: <output>{intFormat.format(timeShift)}</output></span>
-								<input list={snap?"freq-list":null} type="range" min="-{samples*3/4}" max="{samples*3/4}" step="1" bind:value={timeShift} id="control_timeShift">
-							</label>
 							<label for="control_timeStretch"><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Time Stretch: <output>{((true||snap)?intFormat:decimalFormat).format(timeStretch)}</output></span>
 								<input type="range" min="-5" max="5" step={(true||snap)?1:0.01} bind:value={timeStretch} id="control_timeStretch">
+							</label>
+							<label for="control_timeShift"><span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Time Shift: <output>{intFormat.format(timeShift)}</output></span>
+								<input list={snap?"freq-list":null} type="range" min="-{samples*3/4}" max="{samples*3/4}" step="1" bind:value={timeShift} id="control_timeShift">
 							</label>
 
 						<hr>

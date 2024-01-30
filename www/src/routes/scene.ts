@@ -124,10 +124,10 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
 
     const axisGeo = new LineSegmentsGeometry(3, 1, [LineSegmentsGeometry.roundCapStart, LineSegmentsGeometry.arrowCapEnd]);
     axisGeo.setPositions([
-      -2.8,0,0,
-      2.8,0,0,
+      -0.3,0,0,
+      2.3,0,0,
 
-      0,-2.8,0,
+      0,-0.3,0,
       0,2.8,0,
 
       0,0,4.5,
@@ -167,7 +167,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
     let graphOuter = new THREE.Group();
     i++;
     const color_mask_sub = 0b00000000_01000111_01000111_01000111
-    const color_mask_add = 0b00000000_10100000_10100000_10100000
+    const color_mask_add = 0b00000000_10111000_10111000_10111000
     const line_color_mask_sub = 0b00000000_01110111_01110111_01110111
     const line_color_mask_add = 0b00000000_00111111_00111111_00111111
     const window_color_mask_sub = 0b00000000_00110111_00110111_00110111
@@ -226,7 +226,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
     side.scale.y = stretchHeight
 
     const axisMaterial = new LineMaterial({
-      color: color & 0b00000000_00010111_00010111_00010111,
+      color: 0x555555,
       linewidth: 0.7, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       alphaToCoverage: true,
@@ -298,7 +298,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
 
     const xLabel = new LineSegments(labelGeoNew, labelMatX);
     xLabel.renderOrder = 10 + i*2+150
-    xLabel.position.x = 2.8;
+    xLabel.position.x = 2.3;
     labels.push(xLabel)
 
 
@@ -330,7 +330,6 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
 
  
     xLabel.renderOrder = 10 + i*2+150
-    xLabel.position.x = 2.8;
     labels.push(xLabel)
 
     if(sideLabelIndex != null) {
