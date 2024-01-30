@@ -638,7 +638,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
       controls.minDistance = 1
       controls.maxDistance = 12
     } else {
-      controls.minDistance = 6
+      controls.minDistance = 8
       controls.maxDistance = 20
       socket.visible = true
     }
@@ -679,9 +679,9 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
     const newLength = camera.position.length()
 
 
-    if(newLength < 8 && currentFocus === null) {
+    if(newLength < 8.5 && currentFocus === null) {
       focusSide(indexOfSmallest(refRotations.map((x) => x.angleTo(new THREE.Vector3(1,1/stretchHeight,1).multiply(camera.position)))))
-    } else if(newLength > 8 && currentFocus === indexOfSmallest(refRotations.map((x) => x.angleTo(new THREE.Vector3(1,1/stretchHeight,1).multiply(camera.position))), Math.PI/8)) {
+    } else if(newLength > 8.5 && currentFocus === indexOfSmallest(refRotations.map((x) => x.angleTo(new THREE.Vector3(1,1/stretchHeight,1).multiply(camera.position))), Math.PI/8)) {
       focusSide(null)
     }
   })
@@ -690,9 +690,9 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
     const newLength = camera.position.length()
 
 
-    if(newLength < 8 && currentFocus === null) {
+    if(newLength < 8.5 && currentFocus === null) {
       focusSide(indexOfSmallest(refRotations.map((x) => x.angleTo(new THREE.Vector3(1,1/stretchHeight,1).multiply(camera.position)))))
-    } else if(newLength > 8 && currentFocus === indexOfSmallest(refRotations.map((x) => x.angleTo(new THREE.Vector3(1,1/stretchHeight,1).multiply(camera.position))))) {
+    } else if(newLength > 8.5 && currentFocus === indexOfSmallest(refRotations.map((x) => x.angleTo(new THREE.Vector3(1,1/stretchHeight,1).multiply(camera.position))))) {
       focusSide(null)
     }
   })
