@@ -111,6 +111,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
 
 
   let lineMats = []
+  let barMats = []
   let polarMaterials = []
   let polarHide = []
 
@@ -327,8 +328,8 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
 
     const curveBarMaterial = new LineMaterial({
       // color: color & 0b00000000_01000000_01000000_01000000 | 0b00000000_10111111_10111111_10111111,
-      color: color| 0xffffff,
-      linewidth: 1, // in world units with size attenuation, pixels otherwise
+      color: (color&0xa0a0a0| 0x4f4f4f),
+      linewidth: 1.1, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       alphaToCoverage: true,
       transparent: true,
@@ -345,7 +346,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
     curveBarMaterial.polarSourceLength = 4.3;
     curveBarMaterial.polarRadiusScale = 0.5;
     curveBarMaterial.polarRadiusBase = 2.5;
-    curveBarMaterial.opacity = 0.7;
+    curveBarMaterial.opacity = 1;
     curveBarMaterial.stencilWrite = true;
     curveBarMaterial.stencilRef = i;
     curveBarMaterial.stencilFunc = THREE.EqualStencilFunc;
@@ -354,6 +355,11 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
     curveBarMaterial.startProjectionAdd = new THREE.Vector3(0,0,0);
     curveBarMaterial.endProjectionMul = new THREE.Vector3(reflector.x,reflector.y,reflector.z);
     curveBarMaterial.endProjectionAdd = new THREE.Vector3(0,0,0);
+
+
+    curveBarMaterial.polygonOffset = true;
+    curveBarMaterial.polygonOffsetFactor = -100;
+    curveBarMaterial.polygonOffsetUnits = 0.1;
 
     const curveBars = new LineSegments(curve, curveBarMaterial);
 
@@ -364,6 +370,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
     graphOuter.rotation.y = rot.y
 
     lineMats.push(curveBarMaterial)
+    barMats.push(curveBarMaterial)
 
 
     const curveDotMaterial = new LineMaterial({
@@ -374,11 +381,16 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
       alphaToCoverage: true,
       transparent: true,
       depthTest: false,
-      depthWrite: false,
+      depthWrite: true,
       project2d: true,
       project2DStart: new THREE.Vector3(0,0,-4.3),
       project2DEnd: new THREE.Vector3(0,0,4.3),
     });
+
+
+    curveDotMaterial.polygonOffset = true;
+    curveDotMaterial.polygonOffsetFactor = -100;
+    curveDotMaterial.polygonOffsetUnits = 0.001;
 
     lineMats.push(curveDotMaterial)
 
@@ -532,7 +544,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
       cubeSides[s].cubeMaterial.stencilRef = s+2
       cubeSides[s].windowMaterial.stencilRef = s+2
       cubeSides[s].curveBarMaterial.stencilRef = s+2
-      cubeSides[s].curveBars.visible = (focus!=null)
+      //cubeSides[s].curveBars.visible = (focus!=null)
       cubeSides[s].curveDotMaterial.stencilRef = s+2
       cubeSides[s].axisMaterial.stencilRef = s+2
       cubeSides[s].outlineMat.stencilRef = s+2
@@ -574,7 +586,6 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
 
     currentFocus = focus
   }
-
   
   const dirLight = new THREE.DirectionalLight( "white", 3);
   dirLight.position.x = 7
@@ -604,13 +615,24 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
   
   const controls = new OrbitControls( camera, renderer.domElement );
 
+  controls.addEventListener('change', (e) => {
+    const newLength = camera.position.length()
+
+
+    if(newLength < 8 && currentFocus === null) {
+      focusSide(indexOfSmallest(refRotations.map((x) => x.angleTo(new THREE.Vector3(1,1/stretchHeight,1).multiply(camera.position)))))
+    } else if(newLength > 8 && currentFocus === indexOfSmallest(refRotations.map((x) => x.angleTo(new THREE.Vector3(1,1/stretchHeight,1).multiply(camera.position))), Math.PI/8)) {
+      focusSide(null)
+    }
+  })
+
   controls.addEventListener('end', (e) => {
     const newLength = camera.position.length()
 
 
     if(newLength < 8 && currentFocus === null) {
-      focusSide(indexOfSmallest(refRotations.map((x) => x.dot(new THREE.Vector3(1,1/stretchHeight,1).multiply(camera.position)))))
-    } else if(newLength > 8 && currentFocus === indexOfSmallest(refRotations.map((x) => x.dot(new THREE.Vector3(1,1/stretchHeight,1).multiply(camera.position))))) {
+      focusSide(indexOfSmallest(refRotations.map((x) => x.angleTo(new THREE.Vector3(1,1/stretchHeight,1).multiply(camera.position)))))
+    } else if(newLength > 8 && currentFocus === indexOfSmallest(refRotations.map((x) => x.angleTo(new THREE.Vector3(1,1/stretchHeight,1).multiply(camera.position))))) {
       focusSide(null)
     }
   })
@@ -618,13 +640,13 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
   focusSide(null)
   controls.enablePan  = false
 
-  const refRotations = rotations.map((r) => (new THREE.Vector3(-1,0,0)).applyEuler(new THREE.Euler(r.rot.x, r.rot.y, r.rot.z)))
+  const refRotations = rotations.map((r) => (new THREE.Vector3(1,0,0)).applyEuler(new THREE.Euler(r.rot.x, r.rot.y, r.rot.z)))
 
 
-  function indexOfSmallest(a) {
-   var lowest = 0;
-   for (var i = 1; i < a.length; i++) {
-    if (a[i] < a[lowest]) lowest = i;
+  function indexOfSmallest(a, min = null) {
+   var lowest = null;
+   for (var i = 0; i < a.length; i++) {
+    if ((lowest === null || a[i] < a[lowest]) && (min === null || a[i] <= min)) lowest = i;
    }
    return lowest;
   }
@@ -632,11 +654,16 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
   const labelVec = new THREE.Vector3();
   let rotationSubscriber = null
   const animate = () => {
+
     controls.update();
     dirLight.position.copy(camera.position).sub(new THREE.Vector3(5,-15,1))
 
     if(rotationSubscriber) {
       rotationSubscriber(((2*Math.atan2(camera.position.x, camera.position.z) / Math.PI + 1)%4 + 4)%4)
+    }
+
+    for(let bm of barMats) {
+      bm.opacity = 0.9 - Math.min(0.9, Math.max(0, (camera.position.length() - 4)/10))
     }
 
     for(let label of labels) {
