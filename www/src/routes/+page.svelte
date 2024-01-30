@@ -214,12 +214,17 @@
 <style>
 	:global(body) {
 		margin: 0;
-		scrollbar-gutter: stable;
 		background: #effbff;
+	}
+
+	:global(html) {
+		margin: 0;
+		scrollbar-width: thin;
 	}
 
 	.canvas {
 		grid-area: canvas;
+		scrollbar-gutter: stable;
 		display: block;
 		position: fixed;
 		inset: 0;
@@ -269,7 +274,6 @@
 		font-family: monospace;
 		font-size: 1.2em;
 		overflow: auto;
-		scrollbar-gutter: stable;
 		grid-area: controls;
 		justify-self: stretch;
 		margin: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
