@@ -194,9 +194,9 @@
 	  	if(syncRot) {
 	  		const delta = Math.abs(Math.round(r) - r)
 	  		if(delta < 0.02) {
-	  			fraction = Math.round(r)
+	  			fraction = Math.round(r) - 2
 	  		} else {
-	  			fraction = r
+	  			fraction = r - 2
 	  		}
 	  	}
 	  })
@@ -265,6 +265,7 @@
 		overflow: auto;
 		grid-area: controls;
 		justify-self: stretch;
+		margin: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 	}
 
 	.controls-inner {
