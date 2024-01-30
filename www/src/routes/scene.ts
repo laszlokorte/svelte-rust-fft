@@ -8,7 +8,7 @@ import { DecalGeometry } from 'three/addons/geometries/DecalGeometry';
 export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
 
 
-  const labelsTextures = ["Re","Im","t","f"].map((l) => {
+  const axisLabelTextures = ["Re","Im","t","f"].map((l) => {
     const ctx = document.createElement('canvas').getContext('2d');
     if(ctx) {
       const texRes = 64
@@ -23,8 +23,30 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
       ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
       ctx.textAlign = "center"; 
       ctx.fillStyle = '#fff';
-      ctx.font = Math.round(texRes*0.75) + "px monospace"
+      ctx.font = Math.round(texRes*0.65) + "px monospace"
       ctx.fillText(l,0,0)
+      return new THREE.CanvasTexture(ctx.canvas);
+    }
+  })
+
+  const sideLabelTextures = ["f(t)","F(w)","f(-t)","F(-w)"].map((l) => {
+    const ctx = document.createElement('canvas').getContext('2d');
+    if(ctx) {
+      const texRes = 64
+      ctx.canvas.width = texRes;
+      ctx.canvas.height = texRes;
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      ctx.translate(texRes/2,texRes/2)
+      ctx.rotate(-Math.PI/2)
+      ctx.translate(0,texRes/4)
+
+      ctx.imageSmoothingEnabled= false
+      ctx.textAlign = "center"; 
+      ctx.fillStyle = '#fff';
+      ctx.font = Math.round(texRes*0.35) + "px monospace"
+      ctx.fillText(l,0,0)
+      document.body.appendChild(ctx.canvas)
       return new THREE.CanvasTexture(ctx.canvas);
     }
   })
@@ -66,8 +88,12 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
   labelGeoNew.setPositions([
     0,0,0,
     0,0,0,
+  ]);
+
+  const sideLabelGeoNew = new LineSegmentsGeometry(3, 1, [LineSegmentsGeometry.squareCapStart(0,1)]);
+  sideLabelGeoNew.setPositions([
     0,0,0,
-    0,0,0
+    0,0,0,
   ]);
 
     
@@ -116,11 +142,11 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
   let polarHide = []
 
   const rotations = [
-    {rot: new THREE.Vector3(0, 0*Math.PI/2, 0), color:  0x00ffff, shadow: true, showAxis: true, curve: curveGeo, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,1)},
-    {rot: new THREE.Vector3(0, 1*Math.PI/2, 0), color: 0x00ff00, shadow: true, showAxis: true, curve: curveGeoAlt, xAxisLabel: 3, reflector: new THREE.Vector3(1,1,1)},
-    {rot: new THREE.Vector3(0, 2*Math.PI/2, 0), color: 0xff00ff, shadow: true, showAxis: true, curve: curveGeo, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,-1)},
-    {rot: new THREE.Vector3(0, 3*Math.PI/2, 0), color: 0xff0000, shadow: true, showAxis: true, curve: curveGeoAlt, xAxisLabel: 3, reflector: new THREE.Vector3(1,1,-1)},
-    {rot: new THREE.Vector3(0,0,+Math.PI/2), color: 0x0000ff, shadow: true, showAxis: false, curve: curveGeoTop, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,1)},
+    {rot: new THREE.Vector3(0, 0*Math.PI/2, 0), color:  0x00ffff, shadow: true, showAxis: true, curve: curveGeo, sideLabelIndex: 0, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,1)},
+    {rot: new THREE.Vector3(0, 1*Math.PI/2, 0), color: 0x00ff00, shadow: true, showAxis: true, curve: curveGeoAlt, sideLabelIndex: 1, xAxisLabel: 3, reflector: new THREE.Vector3(1,1,1)},
+    {rot: new THREE.Vector3(0, 2*Math.PI/2, 0), color: 0xff00ff, shadow: true, showAxis: true, curve: curveGeo, sideLabelIndex: 2, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,-1)},
+    {rot: new THREE.Vector3(0, 3*Math.PI/2, 0), color: 0xff0000, shadow: true, showAxis: true, curve: curveGeoAlt, sideLabelIndex: 3, xAxisLabel: 3, reflector: new THREE.Vector3(1,1,-1)},
+    {rot: new THREE.Vector3(0,0,+Math.PI/2), color: 0x0000ff, shadow: true, showAxis: false, curve: curveGeoTop, sideLabelIndex: null, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,1)},
     {rot: new THREE.Vector3(0,0,-Math.PI/2), skip: true},
   ]
 
@@ -131,7 +157,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
   let sides = new THREE.Group();
 
   let i = 1;
-  for(let {rot, color, shadow, showAxis, skip, curve, xAxisLabel, reflector} of rotations) {
+  for(let {rot, color, shadow, showAxis, skip, curve, xAxisLabel, reflector, sideLabelIndex} of rotations) {
     if(skip) continue;
 
     let sideOuter = new THREE.Group();
@@ -183,8 +209,8 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
     const cube = new THREE.Mesh(boxGeoX, [nullMaterial, cubeMaterial]);
     const face = new THREE.Mesh(boxGeoX, [faceMaterial, nullMaterial]);
 
-    face.renderOrder = i*2
-    cube.renderOrder = i*2+1
+    face.renderOrder = 10 + i*2
+    cube.renderOrder = 10 + i*2+1
 
 
 
@@ -225,7 +251,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
     axees.push(graphOuter)
 
     polarHide.push(axis)
-    axis.renderOrder = i*2+5
+    axis.renderOrder = 10 + i*2+5
     axisMaterial.depthTest = true
 
     const labelMatX = new LineMaterial({ color: 0x000000 });
@@ -234,7 +260,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
     labelMatX.polarRadiusBase = 0;
     labelMatX.stencilWrite = true;
     labelMatX.stencilRef = i;
-    labelMatX.alphaMap = labelsTextures[1]
+    labelMatX.alphaMap = axisLabelTextures[1]
     labelMatX.transparent = true
     labelMatX.stencilFunc = THREE.EqualStencilFunc;
     labelMatX.depthTest = false;
@@ -248,7 +274,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
     labelMatY.polarRadiusBase = 2.5;
     labelMatY.stencilWrite = true;
     labelMatY.stencilRef = i;
-    labelMatY.alphaMap = labelsTextures[0]
+    labelMatY.alphaMap = axisLabelTextures[0]
     labelMatY.transparent = true
     labelMatY.stencilFunc = THREE.EqualStencilFunc;
     labelMatY.depthTest = false;
@@ -262,7 +288,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
     labelMatZ.polarRadiusBase = 2.5;
     labelMatZ.stencilWrite = true;
     labelMatZ.stencilRef = i;
-    labelMatZ.alphaMap = labelsTextures[xAxisLabel]
+    labelMatZ.alphaMap = axisLabelTextures[xAxisLabel]
     labelMatZ.transparent = true
     labelMatZ.stencilFunc = THREE.EqualStencilFunc;
     labelMatZ.depthTest = false;
@@ -271,18 +297,18 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
     labelMatZ.textured = true;
 
     const xLabel = new LineSegments(labelGeoNew, labelMatX);
-    xLabel.renderOrder = i*2+150
+    xLabel.renderOrder = 10 + i*2+150
     xLabel.position.x = 2.8;
     labels.push(xLabel)
 
 
     const yLabel = new LineSegments(labelGeoNew, labelMatY);
-    yLabel.renderOrder = i*2+150
+    yLabel.renderOrder = 10 + i*2+150
     yLabel.position.y = 2.8;
     labels.push(yLabel)
 
     const zLabel = new LineSegments(labelGeoNew, labelMatZ);
-    zLabel.renderOrder = i*2+150
+    zLabel.renderOrder = 10 + i*2+150
     zLabel.position.z = -4.5;
     labels.push(zLabel)
 
@@ -302,6 +328,39 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
 
     lineMats.push(labelMatX, labelMatY, labelMatZ)
 
+ 
+    xLabel.renderOrder = 10 + i*2+150
+    xLabel.position.x = 2.8;
+    labels.push(xLabel)
+
+    if(sideLabelIndex != null) {
+      const sideLabelMat = new LineMaterial({ color: 0x222222 });
+      sideLabelMat.polar = false;
+      sideLabelMat.polarSourceLength = 30;
+      sideLabelMat.polarRadiusBase = 2.5;
+      sideLabelMat.stencilWrite = true;
+      sideLabelMat.stencilRef = i;
+      sideLabelMat.stencilFunc = THREE.EqualStencilFunc;
+      sideLabelMat.alphaMap = sideLabelTextures[sideLabelIndex]
+      sideLabelMat.transparent = true
+      sideLabelMat.depthTest = true;
+      sideLabelMat.depthWrite = false;
+      sideLabelMat.linewidth = 10;
+      sideLabelMat.textured = true;
+
+
+      const sideLabel = new LineSegments(sideLabelGeoNew, sideLabelMat);
+      sideLabel.renderOrder = 4
+      sideLabel.position.x = 4.5;
+      sideLabel.position.y = -4.5;
+
+      lineMats.push(sideLabelMat)
+
+
+      sideInner.add(sideLabel)
+    }
+   
+
     const outlineMat = new LineMaterial({
       color: color & line_color_mask_sub | line_color_mask_add,
       linewidth: 0.7, // in world units with size attenuation, pixels otherwise
@@ -319,7 +378,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
 
     const outline = new LineSegments(outlineGeo, outlineMat);
 
-    outline.renderOrder = i*2+1
+    outline.renderOrder = 10 + i*2+1
 
 
 
@@ -363,7 +422,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
 
     const curveBars = new LineSegments(curve, curveBarMaterial);
 
-    curveBars.renderOrder = i*2+6
+    curveBars.renderOrder = 10 + i*2+6
     graph.add(curveBars)
 
     graphOuter.add(graph)
@@ -410,7 +469,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
 
     const curveDots = new LineSegments(curve, curveDotMaterial);
 
-    curveDots.renderOrder = i*2+7
+    curveDots.renderOrder = 10 + i*2+7
     graph.add(curveDots)
 
     const shadow1 = new LineMaterial({
@@ -521,7 +580,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
     polarHide.push(shadow1, shadow3, shadow4)
     const curveShadows = new LineSegments(curve, [shadow1, shadow2, shadow3, shadow4]);
 
-    curveShadows.renderOrder = i*2+1
+    curveShadows.renderOrder = 10 + i*2+1
     if(shadow)
       graph.add(curveShadows)
 
@@ -593,6 +652,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
   dirLight.position.z = 13
   scene.add(dirLight);
 
+
   scene.add(light);
   scene.add(sides);
 
@@ -602,13 +662,13 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
 
   const socket = new THREE.Mesh(socketGeo, socketMat);
   socket.position.y=-5*stretchHeight-0.1
-  socket.renderOrder = 0
-  scene.add(socket);
+  socket.renderOrder = 5
 
   camera.position.x = 14;
   camera.position.z = 6;
   camera.position.y = 4;
 
+  scene.add(socket)
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: el, alpha: true });
   renderer.setPixelRatio(window.devicePixelRatio);
