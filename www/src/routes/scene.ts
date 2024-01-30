@@ -90,7 +90,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
     0,0,0,
   ]);
 
-  const sideLabelGeoNew = new LineSegmentsGeometry(3, 1, [LineSegmentsGeometry.squareCapStart(0,1)]);
+  const sideLabelGeoNew = new LineSegmentsGeometry(3, 1, [LineSegmentsGeometry.squareCapStart(0,0)]);
   sideLabelGeoNew.setPositions([
     0,0,0,
     0,0,0,
@@ -352,7 +352,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
       const sideLabel = new LineSegments(sideLabelGeoNew, sideLabelMat);
       sideLabel.renderOrder = 4
       sideLabel.position.x = 4.5;
-      sideLabel.position.y = -4.5;
+      sideLabel.position.y = -4.3;
 
       lineMats.push(sideLabelMat)
 
@@ -594,7 +594,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
   
   let currentFocus = null
   function focusSide(focus) {
-    if(focus && cubeSides[focus].skip) {
+    if(focus && !cubeSides[focus]) {
       return
     }
     for(let s=0;s<cubeSides.length;s++) {
