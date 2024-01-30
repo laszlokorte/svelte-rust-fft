@@ -32,6 +32,8 @@
   let timeStretch = 0
   let circular = false
   let showInfo = false
+  let demoMode = false
+  let syncRot = false
   let timeDomain = new Float32Array(wasm.memory.buffer, signal.get_time(), 2*signal.get_len())
   let freqDomain = new Float32Array(wasm.memory.buffer, signal.get_freq(), 2*signal.get_len())
   let fracDomain = new Float32Array(wasm.memory.buffer, signal.get_frac(), 2*signal.get_len())
@@ -187,6 +189,19 @@
   $: paintPath = customRecording.reduce((acc, n, i) => acc+(i%2==0?getPathA(n,.03):getPathB(n,.03)),"")
   $: paintPathEmpty = !Array.prototype.some.call(customRecording, (a) => a != 0)
 
+  $: if(scene) {
+  	scene.onRotationChange(function(r) {
+	  	if(syncRot) {
+	  		const delta = Math.abs(Math.round(r) - r)
+	  		if(delta < 0.02) {
+	  			fraction = Math.round(r)
+	  		} else {
+	  			fraction = r
+	  		}
+	  	}
+	  })
+  }
+
   onMount(() => {
     scene = createScene(el, camFrame)
 
@@ -220,7 +235,7 @@
 
 	@media(min-width: 800px) {
 		.container {
-			grid-template-columns: [canvas-start controls-start] min-content [controls-end cam-start] 10fr [canvas-end cam-end];
+			grid-template-columns: [canvas-start controls-start] minmax(20em, min-content) [controls-end cam-start] 10fr [canvas-end cam-end];
 			grid-template-rows: [controls-start canvas-start cam-start] 1fr [controls-end canvas-end cam-end];
 		}
 	}
@@ -364,13 +379,24 @@
 	select, button {
 		font: inherit;
 		font-size: inherit;
+		white-space: nowrap;
+		line-height: 1;
+	}
+
+	.hide {
+		display:  none;
+	}
+
+	.demo {
+		grid-template-columns: [canvas-start controls-start cam-start] 1fr [controls-end canvas-end cam-end];
+		grid-template-rows: [controls-start canvas-start cam-start] 1fr [controls-end canvas-end cam-end];
 	}
 </style>
 
-<div class="container">
+<div class="container" class:demo={demoMode}>
 	<canvas class="canvas" bind:this={el}></canvas>
 	<div class="cam-frame" bind:this={camFrame}></div>
-	<div class="controls">
+	<div class="controls" class:hide={demoMode}>
 		<div class="controls-inner">
 			<fieldset>
 				<legend style="white-space: nowrap;">Fractional Discrete <br>Fourier Transform</legend>
@@ -432,7 +458,9 @@
 
 				<label for="control_fraction">
 					<span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Fractional DFT: <output>{decimalFormatSigned.format(fraction)}</output></span>
-					<input list={snap?"frac-list":null} type="range" min="-4" max="4" step="0.01" bind:value={fraction} id="control_fraction"></label>
+					<input disabled={syncRot} list={snap?"frac-list":null} type="range" min="-4" max="4" step="0.01" bind:value={fraction} id="control_fraction"></label>
+					
+					<label><input type="checkbox" bind:checked={syncRot}> Sync to cam</label>
 				<hr>
 				<strong>View</strong><br>
 				<div class="checkbox-list">
@@ -442,6 +470,8 @@
 				<hr>
 
 				<small>&sdot;<button type="button" class="info-button" on:click={() => showInfo = true} on:keydown={() => showInfo = true}>Info</button></small>
+				<br>
+				<small>&sdot;<a class="info-button" href="https://www.youtube.com/watch?v=Xe2Ob1gPqlg">Video Showcase</a></small>
 				<br>
 				<small>&sdot;<a class="info-button" href="//tools.laszlokorte.de" target="_blank">More educational tools</a></small>
 
@@ -652,6 +682,11 @@
 				<p>
 					The fractional fourier transform allows to smoothly interpolate between the time and the frequency domain. You can see this when looking at the top facing side of the cube and moving the <em>Fraction DFT</em> slider from 0 to 1.
 				</p>
+
+				<hr>
+
+
+					<label><input type="checkbox" bind:checked={demoMode}> Demo Mode (Reload to exit)</label>
 
 			</div>
 

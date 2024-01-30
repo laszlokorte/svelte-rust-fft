@@ -630,9 +630,14 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
   }
 
   const labelVec = new THREE.Vector3();
+  let rotationSubscriber = null
   const animate = () => {
     controls.update();
     dirLight.position.copy(camera.position).sub(new THREE.Vector3(5,-15,1))
+
+    if(rotationSubscriber) {
+      rotationSubscriber(((2*Math.atan2(camera.position.x, camera.position.z) / Math.PI + 1)%4 + 4)%4)
+    }
 
     for(let label of labels) {
       label.lookAt(camera.getWorldPosition(labelVec))
@@ -656,6 +661,10 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
 
   resize();
 
+  var ro = new ResizeObserver(resize);
+
+  ro.observe(camFrame);
+
   renderer.setAnimationLoop(animate);
 
   window.addEventListener('resize', resize);
@@ -664,6 +673,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
     dispose: () => {
       window.removeEventListener('resize', resize);
       renderer.dispose()
+      ro.disconnect()
     },
     setFractionalRotation(frac) {
       axees[4].rotation.y = frac
@@ -676,6 +686,9 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
     },
     setFractional(sig) {
      curveGeoTop.setPositions(sig);
+    },
+    onRotationChange(sub) {
+      rotationSubscriber = sub;
     },
     setPolar(p) {
       for(let m of polarMaterials) {
