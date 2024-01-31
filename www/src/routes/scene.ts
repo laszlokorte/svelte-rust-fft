@@ -142,11 +142,11 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
   let polarHide = []
 
   const rotations = [
-    {rot: new THREE.Vector3(0, 0*Math.PI/2, 0), color:  0x00ffff, shadow: true, showAxis: true, curve: curveGeo, sideLabelIndex: 0, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,1)},
-    {rot: new THREE.Vector3(0, 1*Math.PI/2, 0), color: 0x00ff00, shadow: true, showAxis: true, curve: curveGeoAlt, sideLabelIndex: 1, xAxisLabel: 3, reflector: new THREE.Vector3(1,1,1)},
-    {rot: new THREE.Vector3(0, 2*Math.PI/2, 0), color: 0xff00ff, shadow: true, showAxis: true, curve: curveGeo, sideLabelIndex: 2, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,-1)},
-    {rot: new THREE.Vector3(0, 3*Math.PI/2, 0), color: 0xff0000, shadow: true, showAxis: true, curve: curveGeoAlt, sideLabelIndex: 3, xAxisLabel: 3, reflector: new THREE.Vector3(1,1,-1)},
-    {rot: new THREE.Vector3(0,0,+Math.PI/2), color: 0x0000ff, shadow: true, showAxis: false, curve: curveGeoTop, sideLabelIndex: null, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,1)},
+    {rot: new THREE.Vector3(0, 0*Math.PI/2, 0), color:  0x00ffff, shadow: true, showAxis: true, curve: curveGeo, sideLabelIndex: 0, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,-1)},
+    {rot: new THREE.Vector3(0, 1*Math.PI/2, 0), color: 0x00ff00, shadow: true, showAxis: true, curve: curveGeoAlt, sideLabelIndex: 1, xAxisLabel: 3, reflector: new THREE.Vector3(1,1,-1)},
+    {rot: new THREE.Vector3(0, 2*Math.PI/2, 0), color: 0xff00ff, shadow: true, showAxis: true, curve: curveGeo, sideLabelIndex: 2, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,1)},
+    {rot: new THREE.Vector3(0, 3*Math.PI/2, 0), color: 0xff0000, shadow: true, showAxis: true, curve: curveGeoAlt, sideLabelIndex: 3, xAxisLabel: 3, reflector: new THREE.Vector3(1,1,1)},
+    {rot: new THREE.Vector3(0,0,+Math.PI/2), color: 0x0000ff, shadow: true, showAxis: false, curve: curveGeoTop, sideLabelIndex: null, xAxisLabel: 2, reflector: new THREE.Vector3(1,1,-1)},
     {rot: new THREE.Vector3(0,0,-Math.PI/2), skip: true},
   ]
 

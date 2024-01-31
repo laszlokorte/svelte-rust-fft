@@ -72,7 +72,7 @@
 	recordClear()
 
 	function recordDo() {
-		r = (r+samples-1)%samples;
+		r = (r+samples+1)%samples;
 		ra = requestAnimationFrame(recordDo)
 		if((rbs & 4) == 4) {
 			customRecording[2*r] = Math.sign(ry) * Math.sqrt(Math.abs(ry))
@@ -140,8 +140,8 @@
 	  		const mag = amplitude*shapes[shape](timeStetchExp*t*16, samples/(timeStetchExp*16))
 	  		const phi = Math.PI*2*(freq*2*t+phase/360)
 
-	  		timeDomain[(2*i+2*timeShift+samples*2)%(samples*2)] = mag * Math.cos(phi)
-	  		timeDomain[(2*i+1+2*timeShift+samples*2)%(samples*2)] =  mag * Math.sin(phi)
+	  		timeDomain[(2*i-2*timeShift+samples*2)%(samples*2)] = mag * Math.cos(phi)
+	  		timeDomain[(2*i+1-2*timeShift+samples*2)%(samples*2)] =  mag * Math.sin(phi)
 	  	}
   	} else {
   		for(let i=0;i<samples;i++) {
