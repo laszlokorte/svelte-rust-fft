@@ -416,8 +416,8 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
 
 
     curveBarMaterial.polygonOffset = true;
-    curveBarMaterial.polygonOffsetFactor = -100;
-    curveBarMaterial.polygonOffsetUnits = 0.1;
+    curveBarMaterial.polygonOffsetFactor = -5;
+    curveBarMaterial.polygonOffsetUnits = 2;
 
     const curveBars = new LineSegments(curve, curveBarMaterial);
 
@@ -447,8 +447,8 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
 
 
     curveDotMaterial.polygonOffset = true;
-    curveDotMaterial.polygonOffsetFactor = -100;
-    curveDotMaterial.polygonOffsetUnits = 0.001;
+    curveDotMaterial.polygonOffsetFactor = -5;
+    curveDotMaterial.polygonOffsetUnits = 2;
 
     lineMats.push(curveDotMaterial)
 
