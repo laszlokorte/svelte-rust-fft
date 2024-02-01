@@ -26,17 +26,17 @@
 </p>
 
 <p>
-	The signal in time domain is called <code>f(t)</code>. The fourier transformed signal in frequency domain is called <code>F(w)</code>. The relation is written as <code>f(t) ⊶ F(w)</code>.
+	The signal in time domain is called <code>f(t)</code>. The fourier transformed signal in frequency domain is called <code>F(ω)</code>. The relation is written as <code>f(t) ⊶ F(ω)</code>.
 </p>
 
 
 <h3>Fourier Transform</h3>
 <p>
-	The Fourier Transform is a linear transformation that decomposes a signal <code>f(t)</code> into harmonically oscillating components <code>F(w)</code>, ie. it determines what <code>A&sdot;cos(w&sdot;t)</code> and <code>B&sdot;sin(w&sdot;t)</code> functions need to be summed together to trconstruct the signal <code>f(t)</code>. <code>sin</code> is an odd function and <code>cos</code> is an even function. The sum of only odd functions is itself an odd function. The sum of only even functions is an even function. To construct any signal that is neither even nor odd sin and cos components need to be mixed. 
+	The Fourier Transform is a linear transformation that decomposes a signal <code>f(t)</code> into harmonically oscillating components <code>F(ω)</code>, ie. it determines what <code>A&sdot;cos(ω&sdot;t)</code> and <code>B&sdot;sin(ω&sdot;t)</code> functions need to be summed together to trconstruct the signal <code>f(t)</code>. <code>sin</code> is an odd function and <code>cos</code> is an even function. The sum of only odd functions is itself an odd function. The sum of only even functions is an even function. To construct any signal that is neither even nor odd sin and cos components need to be mixed. 
 </p>
 
 <p>
-	Both functions <code>A&sdot;cos(w&sdot;t)</code> and <code>B&sdot;sin(w&sdot;t)</code> can be precombined into a single expression by making use of eulers identity <code>exp(i&sdot;w&sdot;t) = cos(w&sdot;t) + i&sdot;sin(w&sdot;t)</code>. This simplifies and unifies all the calculations. So in the general case the Fourier transform decomposes a signal <code>f(t)</code> into a weighted sum of <code>exp(i&sdot;w&sdot;t)</code> terms.
+	Both functions <code>A&sdot;cos(ω&sdot;t)</code> and <code>B&sdot;sin(ω&sdot;t)</code> can be precombined into a single expression by making use of eulers identity <code>exp(i&sdot;w&sdot;t) = cos(ω&sdot;t) + i&sdot;sin(ω&sdot;t)</code>. This simplifies and unifies all the calculations. So in the general case the Fourier transform decomposes a signal <code>f(t)</code> into a weighted sum of <code>exp(i&sdot;w&sdot;t)</code> terms.
 </p>
 
 <p>
@@ -156,8 +156,8 @@
 		</tr>
 		<tr>
 			<th>Linearity</th>
-			<td>Adding a constant angle <code>w</code> to the signals complex values at each point in time.</td>
-			<td>Adding a constant angle <code>w</code> to the signals complex coefficients at each frequency bin.</td>
+			<td>Adding a constant angle <code>𝛼</code> to the signals complex values at each point in time.</td>
+			<td>Adding a constant angle <code>𝛼</code> to the signals complex coefficients at each frequency bin.</td>
 		</tr>
 		<tr>
 			<th>Time scaling</th>
@@ -172,12 +172,12 @@
 		<tr>
 			<th>Time shifting</th>
 			<td>Shifting the signal forwards or backwards along the time axis by <code>t</code> time steps.</td>
-			<td>Adding an angle <code>t*f</code> to each frequency coefficient proportial to the bins frequency <code>f</code></td>
+			<td>Adding an angle <code>t&sdot;ω</code> to each frequency coefficient proportial to the bins frequency <code>ω</code></td>
 		</tr>
 		<tr>
 			<th>Frequency shifting</th>
-			<td>Adding an angle <code>t*w</code> to each signals value at time <code>t</code></td>
-			<td>Shifting the signals frequency coefficients upwards or downwards along the frequency axis by <code>w</code> time steps.</td>
+			<td>Adding an angle <code>t*𝛼</code> to each signals value at time <code>t</code></td>
+			<td>Shifting the signals frequency coefficients upwards or downwards along the frequency axis by <code>𝛼</code> time steps.</td>
 		</tr>
 	</tbody>
 </table>

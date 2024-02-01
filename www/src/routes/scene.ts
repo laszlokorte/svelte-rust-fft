@@ -8,7 +8,7 @@ import { DecalGeometry } from 'three/addons/geometries/DecalGeometry';
 export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
 
 
-  const axisLabelTextures = ["Re","Im","t","f"].map((l) => {
+  const axisLabelTextures = ["Re","Im","t","ω"].map((l) => {
     const ctx = document.createElement('canvas').getContext('2d');
     if(ctx) {
       const texRes = 64
@@ -29,7 +29,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
     }
   })
 
-  const sideLabelTextures = ["f(t)","F(w)","f(-t)","F(-w)"].map((l) => {
+  const sideLabelTextures = ["f(t)","F(ω)","f(-t)","F(-ω)"].map((l) => {
     const ctx = document.createElement('canvas').getContext('2d');
     if(ctx) {
       const texRes = 64
@@ -712,10 +712,12 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
 
   const labelVec = new THREE.Vector3();
   let rotationSubscriber = null
+
   const animate = () => {
 
     controls.update();
     dirLight.position.copy(camera.position).sub(new THREE.Vector3(5,-15,1))
+
 
     if(rotationSubscriber) {
       rotationSubscriber(((2*Math.atan2(camera.position.x, camera.position.z) / Math.PI + 1)%4 + 4)%4)
