@@ -33,17 +33,13 @@ impl Interpolator {
     // xint = xint(2*N-2:end-2*N+3);
     // ---
     pub fn interp<'s, 'c>(&'s mut self, signal: impl Iterator<Item=&'c Complex<f32>>) -> &'s [Complex<f32>] {
-        let n = self.conv_result.len();
+        let n = self.conv_result.len() / 6;
         let ni = n as i32;
-        let interspersed = signal.cloned().intersperse(Complex::default());
-        let sinc = ((-2*ni-3)..(2*ni-3)).map(|x| sinc(x as f32));
+        let interspersed = signal.cloned().intersperse(Complex::default()).skip(1);
+        let sinc = ((-2*ni)..(2*ni)).map(|x| sinc(x as f32 / 2.0));
         self.convolver.conv(interspersed, sinc, &mut self.conv_result);
 
-        &self.conv_result[(2*n/6)..(4*n/6)]
-
-        // a: impl Iterator<Item = Complex<f32>>,
-        // b: impl Iterator<Item = Complex<f32>>,
-        // mut into: &mut [Complex<f32>],
+        &self.conv_result[(2*n)..(4*n)]
     }
 }
 

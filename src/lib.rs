@@ -9,6 +9,7 @@ mod sinc;
 pub mod sinc_interp;
 mod utils;
 
+use crate::frft::Frft;
 use crate::convolver::conv_length;
 use crate::convolver::Convolver;
 use crate::frft2::Frft2;
@@ -29,7 +30,8 @@ pub struct Signal {
     freq: Vec<Complex<f32>>,
     frac: Vec<Complex<f32>>,
 
-    frft: Frft2,
+    frft2: Frft2,
+    frft: Frft,
 }
 
 fn do_fft(fft: &Arc<dyn Fft<f32>>, source: &Vec<Complex<f32>>, target: &mut Vec<Complex<f32>>) {
@@ -79,7 +81,8 @@ impl Signal {
 
         Self {
             fft_integer,
-            frft: Frft2::new(length),
+            frft2: Frft2::new(length),
+            frft: Frft::new(length),
             time,
             freq,
             frac,

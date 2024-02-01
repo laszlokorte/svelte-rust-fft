@@ -76,6 +76,7 @@ pub struct Frft {
     fft_integer: Arc<dyn Fft<f32>>,
     interpolator: Interpolator,
     convolver: Convolver,
+    conv_res: Vec<Complex<f32>>,
 }
 
 impl Frft {
@@ -87,12 +88,14 @@ impl Frft {
         let fft_integer = planner.plan_fft_forward(length);
         let interpolator = Interpolator::new(length);
         let convolver = Convolver::new(length);
+        let conv_res = vec![Complex::default(); 9*length];
 
-        Self { fft_integer, interpolator, convolver }
+        Self { fft_integer, interpolator, convolver, conv_res }
     }
 
     pub fn process(&mut self, mut frac: &mut [Complex<f32>], fraction: f32) {
         let n = frac.len();
+        let i_n = n as i32;
         let f_n = n as f32;
 
         let mut a = (fraction + 4.0).rem_euclid(4.0);
@@ -157,29 +160,33 @@ impl Frft {
             let sqrt_c_pi = f32::sqrt(c/PI);
             let interped_f = self.interpolator.interp(frac.iter());
 
-            let chirp_a = (0..1).into_iter().map(|x| Complex::<f32>::default());
+            // chrp_a = exp(-i*pi/N*tana2/4*(-2*N+2:2*N-2)'.^2);
+            let chirp_a = ((-2*i_n)..(2*i_n)).into_iter().map(|x| Complex::<f32>::new(0.0, -PI / f_n*tana2/4.0 * ((x*x) as f32)).exp());
+            // chirp_b = exp(i*c*(-(4*N-4):4*N-4)'.^2)
+            let chirp_b = ((-4*i_n)..(4*i_n)).into_iter().map(|x| Complex::<f32>::new(0.0, c*((x*x) as f32)).exp());
+            
+            // % chirp premultiplication
+            // f = chrp_a.*f;
             let f1 = chirp_a.clone().zip(interped_f).map(|(a,b)| a * b);
 
-            let chirp_b = (0..1).into_iter().map(|x| Complex::<f32>::default());
-
-            let mut conv_res = Vec::new();
-            self.convolver.conv(chirp_b, f1, &mut conv_res);
-
-            let f1 = conv_res.iter().zip(chirp_a).map(|(a,b)| a*b * sqrt_c_pi);
-
-            iter_into_slice(f1, &mut frac);
-
-            // % chirp premultiplication
-            // chrp = exp(-i*pi/N*tana2/4*(-2*N+2:2*N-2)'.^2);
-            // f = chrp.*f;
-            //
             // % chirp convolution
             // c = pi/N/sina/4;
-            // Faf = fconv(exp(i*c*(-(4*N-4):4*N-4)'.^2),f);
+            // Faf = fconv(chirp_b,f);
             // Faf = Faf(4*N-3:8*N-7)*sqrt(c/pi);
-            //
+            self.convolver.conv(chirp_b.clone(), f1.clone(), &mut self.conv_res);
+
             // % chirp post multiplication
-            // Faf = chrp.*Faf;
+            // Faf = chrp_a.*Faf;
+            let f2 = self.conv_res.iter().zip(chirp_a.clone()).map(|(a,b)| a * b * sqrt_c_pi);
+
+            iter_into_slice(f2, &mut frac);
+            //DEBUG
+            //iter_into_slice(interped_f.iter().cloned(), &mut frac);
+
+            
+            //
+            
+            //
             //
             // % normalizing constant
             // Faf = exp(-i*(1-a)*pi/4)*Faf(N:2:end-N+1);

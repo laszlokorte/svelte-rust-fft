@@ -223,9 +223,9 @@ impl Frft2 {
             self.h0.reverse();
             self.h0.rotate_right(1);
 
-            for (i, l) in l0.enumerate() {
-                frac[i] = cs * l * self.h0[n + i] * f32::sqrt(f_n);
-            }
+
+            let result = l0.enumerate().map(|(i,l)| cs * l * self.h0[n + i] * f32::sqrt(f_n));
+            iter_into_slice(result, frac);
 
             return scale_factor;
         }
