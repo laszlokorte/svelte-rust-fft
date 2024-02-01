@@ -1,4 +1,5 @@
 #![feature(iter_array_chunks)]
+#![feature(iter_intersperse)]
 
 mod convolver;
 pub mod frft;

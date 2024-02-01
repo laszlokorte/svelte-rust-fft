@@ -1,3 +1,7 @@
+use crate::iter_into_slice;
+use crate::Convolver;
+use crate::sinc_interp::Interpolator;
+use std::f32::consts::PI;
 use crate::conv_length;
 
 use crate::Complex;
@@ -70,6 +74,8 @@ use crate::Arc;
 
 pub struct Frft {
     fft_integer: Arc<dyn Fft<f32>>,
+    interpolator: Interpolator,
+    convolver: Convolver,
 }
 
 impl Frft {
@@ -79,13 +85,15 @@ impl Frft {
 
         let mut planner = FftPlanner::new();
         let fft_integer = planner.plan_fft_forward(length);
+        let interpolator = Interpolator::new(length);
+        let convolver = Convolver::new(length);
 
-        Self { fft_integer }
+        Self { fft_integer, interpolator, convolver }
     }
 
-    pub fn process(&mut self, frac: &mut [Complex<f32>], fraction: f32) {
+    pub fn process(&mut self, mut frac: &mut [Complex<f32>], fraction: f32) {
         let n = frac.len();
-        let _f_n = n as f32;
+        let f_n = n as f32;
 
         let mut a = (fraction + 4.0).rem_euclid(4.0);
 
@@ -142,7 +150,24 @@ impl Frft {
             // tana2 = tan(alpha/2);
             // sina = sin(alpha);
             // f = [zeros(N-1,1) ; interp(f) ; zeros(N-1,1)];
- 
+            let alpha = a * PI / 2.0;
+            let tana2 = f32::tan(alpha/2.0);
+            let sina = f32::sin(alpha);
+            let c = PI/f_n/sina/4.0;
+            let sqrt_c_pi = f32::sqrt(c/PI);
+            let interped_f = self.interpolator.interp(frac.iter());
+
+            let chirp_a = (0..1).into_iter().map(|x| Complex::<f32>::default());
+            let f1 = chirp_a.clone().zip(interped_f).map(|(a,b)| a * b);
+
+            let chirp_b = (0..1).into_iter().map(|x| Complex::<f32>::default());
+
+            let mut conv_res = Vec::new();
+            self.convolver.conv(chirp_b, f1, &mut conv_res);
+
+            let f1 = conv_res.iter().zip(chirp_a).map(|(a,b)| a*b * sqrt_c_pi);
+
+            iter_into_slice(f1, &mut frac);
 
             // % chirp premultiplication
             // chrp = exp(-i*pi/N*tana2/4*(-2*N+2:2*N-2)'.^2);

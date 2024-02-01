@@ -194,10 +194,8 @@ impl Frft2 {
                 .map(|x| sinc(x) * 0.5);
 
             self.convolver
-                .conv_spectral(frac.iter().cloned(), sinc_iter, &mut self.f1);
-
-            self.convolver.fft(&mut self.f1);
-            let f1_slice = &self.f1[n..(2 * n - 1)];
+                .conv(frac.iter().cloned(), sinc_iter, &mut self.f1);
+            let f1_slice = self.f1[n..(2 * n - 1)].into_iter().rev();
 
             let chirp_a = (0..(2 * n - 1))
                 .map(|i| -f_n + 1.0 + i as f32)
@@ -212,7 +210,7 @@ impl Frft2 {
             let e1 = chirp_b.skip(1).step_by(2);
 
             let f0m_iter = frac.iter().zip(l0.clone()).map(|(a, b)| a * b);
-            let f1m_iter = f1_slice.iter().zip(l1).map(|(a, b)| a * b);
+            let f1m_iter = f1_slice.zip(l1).map(|(a, b)| a * b);
 
             self.convolver.conv_spectral(f0m_iter, e0, &mut self.f0c);
             self.convolver.conv_spectral(f1m_iter, e1, &mut self.f1c);

@@ -47,6 +47,17 @@ impl Convolver {
         )
     }
 
+    pub fn conv(
+        &mut self,
+        a: impl Iterator<Item = Complex<f32>>,
+        b: impl Iterator<Item = Complex<f32>>,
+        mut into: &mut [Complex<f32>],
+    ) {
+        self.conv_spectral(a, b, into);
+        self.fft_conv.process(&mut into);
+        into.reverse();
+    }
+
     pub fn fft(&self, signal: &mut [Complex<f32>]) {
         self.fft_conv.process(signal);
     }
