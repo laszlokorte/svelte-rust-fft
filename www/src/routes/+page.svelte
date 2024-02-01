@@ -24,7 +24,7 @@
   let camFrame;
   let scene = null
   let snap = false
-  let fraction = 0.01
+  let fraction = 0
   let freq = 0
   let phase = 0
   let amplitude = 1
