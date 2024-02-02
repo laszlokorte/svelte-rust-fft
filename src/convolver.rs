@@ -51,10 +51,10 @@ impl Convolver {
         &mut self,
         a: impl Iterator<Item = Complex<f32>>,
         b: impl Iterator<Item = Complex<f32>>,
-        mut into: &mut [Complex<f32>],
+        into: &mut [Complex<f32>],
     ) {
         self.conv_spectral(a, b, into);
-        self.fft_conv.process(&mut into);
+        self.fft_conv.process(into);
         into.reverse();
     }
 

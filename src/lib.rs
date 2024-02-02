@@ -9,9 +9,9 @@ mod sinc;
 pub mod sinc_interp;
 mod utils;
 
-use crate::frft::Frft;
 use crate::convolver::conv_length;
 use crate::convolver::Convolver;
+use crate::frft::Frft;
 use crate::frft2::Frft2;
 use crate::iter::iter_into_slice;
 use rustfft::Fft;
@@ -116,6 +116,8 @@ impl Signal {
     pub fn update_frac(&mut self, fraction: f32) {
         self.frac.clone_from(&self.time);
         self.frft.process(&mut self.frac, fraction);
+        self.frac.clone_from(&self.time);
+        self.frft2.process(&mut self.frac, fraction);
 
         let scale_nominator = self
             .time

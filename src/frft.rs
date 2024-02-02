@@ -1,8 +1,7 @@
 use crate::iter_into_slice;
-use crate::Convolver;
 use crate::sinc_interp::Interpolator;
+use crate::Convolver;
 use std::f32::consts::PI;
-use crate::conv_length;
 
 use crate::Complex;
 use crate::Fft;
@@ -81,49 +80,90 @@ pub struct Frft {
 
 impl Frft {
     pub fn new(length: usize) -> Self {
-        let sinc_len = 2 * length - 1;
-        let _fft_conv_len = conv_length(length, sinc_len);
-
         let mut planner = FftPlanner::new();
         let fft_integer = planner.plan_fft_forward(length);
         let interpolator = Interpolator::new(length);
         let convolver = Convolver::new(length);
-        let conv_res = vec![Complex::default(); 9*length];
+        let conv_res = vec![Complex::default(); 9 * length];
 
-        Self { fft_integer, interpolator, convolver, conv_res }
+        Self {
+            fft_integer,
+            interpolator,
+            convolver,
+            conv_res,
+        }
     }
 
-    pub fn process(&mut self, mut frac: &mut [Complex<f32>], fraction: f32) {
-        let n = frac.len();
-        let i_n = n as i32;
-        let f_n = n as f32;
+    pub fn process(&mut self, signal: &mut [Complex<f32>], fraction: f32) {
+        let _ = self.process_internal(signal, fraction);
+    }
 
+    pub fn process_scaled(&mut self, signal: &mut [Complex<f32>], fraction: f32) {
+        let scale = f32::sqrt(self.process_internal(signal, fraction));
+
+        for v in signal.iter_mut() {
+            v.re *= scale;
+            v.im *= scale;
+        }
+    }
+
+    fn chirps(
+        &self,
+        i_n: i32,
+        a: f32,
+    ) -> (
+        impl Iterator<Item = Complex<f32>> + Clone,
+        impl Iterator<Item = Complex<f32>> + Clone,
+    ) {
+        let f_n = i_n as f32;
+        let alpha = a * PI / 2.0;
+        let tana2 = f32::tan(alpha / 2.0);
+        let sina = f32::sin(alpha);
+        let c = PI / f_n / sina / 4.0;
+
+        // chrp_a = exp(-i*pi/N*tana2/4*(-2*N+2:2*N-2)'.^2);
+        let chirp_a = ((-2 * i_n)..(2 * i_n)).map(move |x| {
+            Complex::<f32>::new(0.0, -PI / f_n * tana2 / 4.0 * ((x * x) as f32)).exp()
+        });
+        // chirp_b = exp(i*c*(-(4*N-4):4*N-4)'.^2)
+        let chirp_b = ((-4 * i_n)..(4 * i_n))
+            .map(move |x| Complex::<f32>::new(0.0, c * ((x * x) as f32)).exp());
+
+        (chirp_a, chirp_b)
+    }
+
+    fn preprocess(&self, frac: &mut [Complex<f32>], fraction: f32) -> (f32, Option<f32>) {
+        let n = frac.len();
+        let f_n = n as f32;
         let mut a = (fraction + 4.0).rem_euclid(4.0);
 
-        // % do special cases
-        // if (a==0), Faf = f; return; end;
-        // if (a==2), Faf = flipud(f); return; end;
-        // if (a==1), Faf(shft,1) = fft(f(shft))/sN; return; end
-        // if (a==3), Faf(shft,1) = ifft(f(shft))*sN; return; end
         if a == 0.0 {
+            (1.0, None)
         } else if a == 1.0 {
             frac.rotate_right(n / 2);
             self.fft_integer.process(frac);
             frac.rotate_right(n / 2);
+
+            return (1.0 / f_n, None);
         } else if a == 2.0 {
             frac.reverse();
+            frac.rotate_right(1);
+
+            return (1.0, None);
         } else if a == 3.0 {
             frac.rotate_right(n / 2);
             self.fft_integer.process(frac);
             frac.rotate_right(n / 2);
             frac.reverse();
+            frac.rotate_right(1);
+
+            return (1.0 / f_n, None);
         } else {
-            // % reduce to interval 0.5 < a < 1.5
-            // if (a>2.0), a = a-2; f = flipud(f); end
-            // if (a>1.5), a = a-1; f(shft,1) = fft(f(shft))/sN; end
-            // if (a<0.5), a = a+1; f(shft,1) = ifft(f(shft))*sN; end
+            let mut scale_factor = 1.0;
+
             let mut do_rev = if a > 2.0 {
                 a -= 2.0;
+                frac.rotate_right(1);
                 true
             } else {
                 false
@@ -134,62 +174,82 @@ impl Frft {
                 frac.rotate_right(n / 2);
                 self.fft_integer.process(frac);
                 frac.rotate_right(n / 2);
+                frac.rotate_left(1);
+
+                scale_factor /= f_n;
             }
             if a < 0.5 {
                 a += 1.0;
+
+                if do_rev {
+                    frac.rotate_left(1);
+                }
                 frac.rotate_right(n / 2);
                 self.fft_integer.process(frac);
                 frac.rotate_right(n / 2);
+                frac.rotate_left(1);
 
                 do_rev = !do_rev;
+
+                scale_factor *= f_n;
+            } else if do_rev {
+                frac.rotate_left(1);
             }
 
             if do_rev {
                 frac.reverse();
+                frac.rotate_right(1);
             }
 
+            return (scale_factor, Some(a));
+        }
+    }
+
+    fn process_internal(&mut self, frac: &mut [Complex<f32>], fraction: f32) -> f32 {
+        let n = frac.len();
+        let i_n = n as i32;
+        let f_n = n as f32;
+
+        let (scale_factor, adjusted_a) = self.preprocess(frac, fraction);
+
+        if let Some(a) = adjusted_a {
             // % the general case for 0.5 < a < 1.5
             // alpha = a*pi/2;
             // tana2 = tan(alpha/2);
             // sina = sin(alpha);
             // f = [zeros(N-1,1) ; interp(f) ; zeros(N-1,1)];
             let alpha = a * PI / 2.0;
-            let tana2 = f32::tan(alpha/2.0);
             let sina = f32::sin(alpha);
-            let c = PI/f_n/sina/4.0;
-            let sqrt_c_pi = f32::sqrt(c/PI);
+            let c = PI / f_n / sina / 4.0;
+            let sqrt_c_pi = f32::sqrt(c / PI);
+            let (chirp_a, chirp_b) = self.chirps(i_n, a);
+
             let interped_f = self.interpolator.interp(frac.iter());
 
-            // chrp_a = exp(-i*pi/N*tana2/4*(-2*N+2:2*N-2)'.^2);
-            let chirp_a = ((-2*i_n)..(2*i_n)).into_iter().map(|x| Complex::<f32>::new(0.0, -PI / f_n*tana2/4.0 * ((x*x) as f32)).exp());
-            // chirp_b = exp(i*c*(-(4*N-4):4*N-4)'.^2)
-            let chirp_b = ((-4*i_n)..(4*i_n)).into_iter().map(|x| Complex::<f32>::new(0.0, c*((x*x) as f32)).exp());
-            
             // % chirp premultiplication
             // f = chrp_a.*f;
-            let f1 = chirp_a.clone().zip(interped_f).map(|(a,b)| a * b);
+            let f1 = chirp_a.clone().zip(interped_f).map(|(a, b)| a * b);
 
             // % chirp convolution
             // c = pi/N/sina/4;
             // Faf = fconv(chirp_b,f);
             // Faf = Faf(4*N-3:8*N-7)*sqrt(c/pi);
-            self.convolver.conv(chirp_b.clone(), f1.clone(), &mut self.conv_res);
+            self.convolver.conv(chirp_b, f1.clone(), &mut self.conv_res);
 
             // % chirp post multiplication
             // Faf = chrp_a.*Faf;
-            let f2 = self.conv_res.iter().zip(chirp_a.clone()).map(|(a,b)| a * b * sqrt_c_pi);
+            let f2 = self
+                .conv_res
+                .iter()
+                .zip(chirp_a)
+                .map(|(a, b)| a * b * sqrt_c_pi);
 
-            iter_into_slice(f2, &mut frac);
-            //DEBUG
-            //iter_into_slice(interped_f.iter().cloned(), &mut frac);
+            iter_into_slice(f2, frac);
 
-            
-            //
-            
-            //
-            //
             // % normalizing constant
             // Faf = exp(-i*(1-a)*pi/4)*Faf(N:2:end-N+1);
         }
+
+        scale_factor
     }
 }
