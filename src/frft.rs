@@ -115,6 +115,14 @@ impl Frft {
         impl Iterator<Item = Complex<f32>> + Clone,
         impl Iterator<Item = Complex<f32>> + Clone,
     ) {
+        // alpha
+        // 2.0420352248333655
+        // tana2
+        // 1.6318516871287894
+        // sina
+        // 0.8910065241883679
+        // c
+        // 0.05509206036067469
         let f_n = i_n as f32;
         let alpha = a * PI / 2.0;
         let tana2 = f32::tan(alpha / 2.0);
@@ -122,11 +130,11 @@ impl Frft {
         let c = PI / f_n / sina / 4.0;
 
         // chrp_a = exp(-i*pi/N*tana2/4*(-2*N+2:2*N-2)'.^2);
-        let chirp_a = ((-2 * i_n)..(2 * i_n)).map(move |x| {
+        let chirp_a = ((-2 * i_n + 2)..(2 * i_n - 1)).map(move |x| {
             Complex::<f32>::new(0.0, -PI / f_n * tana2 / 4.0 * ((x * x) as f32)).exp()
         });
         // chirp_b = exp(i*c*(-(4*N-4):4*N-4)'.^2)
-        let chirp_b = ((-4 * i_n)..(4 * i_n))
+        let chirp_b = ((-4 * i_n + 4)..(4 * i_n - 3))
             .map(move |x| Complex::<f32>::new(0.0, c * ((x * x) as f32)).exp());
 
         (chirp_a, chirp_b)
@@ -241,15 +249,99 @@ impl Frft {
             let f2 = self
                 .conv_res
                 .iter()
+                //.skip(4 * n - 3)
                 .zip(chirp_a)
                 .map(|(a, b)| a * b * sqrt_c_pi);
 
-            iter_into_slice(f2, frac);
+            iter_into_slice(f2.step_by(2), frac);
 
             // % normalizing constant
             // Faf = exp(-i*(1-a)*pi/4)*Faf(N:2:end-N+1);
         }
 
         scale_factor
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use assert_approx_eq::assert_approx_eq;
+    use crate::Complex;
+    use crate::Frft;
+
+
+    #[test]
+    fn frft_chirp() {
+        let frft = Frft::new(16);
+        let (mut c1, mut c2) = frft.chirps(16, 1.3);
+
+        assert_eq!(61, c1.clone().count());
+        assert_eq!(121, c2.clone().count());
+
+        let f1 = c1.next().unwrap();
+        let f2 = c2.next().unwrap();
+        let l1 = c1.last().unwrap();
+        let l2 = c2.last().unwrap();
+
+        let a1f = Complex::new(-0.98664215, -0.16290265);
+        let a2f = Complex::new(-0.91668974, -0.3995997);
+        let a1l = Complex::new(-0.98664215, -0.16290265);
+        let a2l = Complex::new(-0.91668974, -0.3995997);
+
+        assert_approx_eq!(a1f.re, f1.re, 1e-4);
+        assert_approx_eq!(a1f.im, f1.im, 1e-4);
+        assert_approx_eq!(a2f.re, f2.re, 1e-4);
+        assert_approx_eq!(a2f.im, f2.im, 1e-4);
+
+
+        assert_approx_eq!(a1l.re, l1.re, 1e-4);
+        assert_approx_eq!(a1l.im, l1.im, 1e-4);
+        assert_approx_eq!(a2l.re, l2.re, 1e-4);
+        assert_approx_eq!(a2l.im, l2.im, 1e-4);
+    }
+
+    #[test]
+    fn frft_03() {
+        let mut frft = Frft::new(16);
+        let mut signal = [
+            Complex::new(1.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+        ];
+
+        let expected = [
+            Complex::new(-0.04139014, 0.21485908),
+            Complex::new(-0.15800667, 0.01220657),
+            Complex::new(0.1289293, -0.19462559),
+            Complex::new(-0.10956088, 0.15421447),
+            Complex::new(0.09545444, -0.06652694),
+            Complex::new(-0.06943505, 0.00793037),
+            Complex::new(0.04457944, 0.01806855),
+            Complex::new(-0.03091022, -0.02609895),
+            Complex::new(0.03091022, 0.02609895),
+            Complex::new(-0.04457944, -0.01806855),
+            Complex::new(0.06943505, -0.00793037),
+            Complex::new(-0.09545444, 0.06652694),
+            Complex::new(0.10956088, -0.15421447),
+            Complex::new(-0.1289293, 0.19462559),
+            Complex::new(0.15800667, -0.01220657),
+            Complex::new(0.04139014, -0.21485908),
+        ];
+
+        frft.process_scaled(&mut signal, 0.3);
+        assert_eq!(expected, signal);
     }
 }

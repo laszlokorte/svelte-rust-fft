@@ -125,7 +125,7 @@ impl Frft2 {
         let alpha = a * PI / 2.0;
         let s = PI / (f_n + 1.0) / alpha.sin() / 4.0;
         let t = PI / (f_n + 1.0) * (alpha / 2.0).tan() / 4.0;
-        // chrp = exp(-i*t*(-N+1:N-1)'.^2);    
+        // chrp = exp(-i*t*(-N+1:N-1)'.^2);
         let chirp_a = (0..(2 * n - 1))
             .map(move |i| -f_n + 1.0 + i as f32)
             .map(move |x| Complex::<f32>::new(0.0, -1.0 * t * x * x).exp());
@@ -160,7 +160,6 @@ impl Frft2 {
             return (1.0 / f_n, None);
         } else if a == 2.0 {
             frac.reverse();
-            frac.rotate_right(1);
 
             return (1.0, None);
         } else if a == 3.0 {
