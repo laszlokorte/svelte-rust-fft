@@ -1,3 +1,4 @@
+use core::iter;
 use crate::iter_into_slice;
 use crate::sinc_interp::Interpolator;
 use crate::Convolver;
@@ -83,8 +84,11 @@ impl Frft {
         let mut planner = FftPlanner::new();
         let fft_integer = planner.plan_fft_forward(length);
         let interpolator = Interpolator::new(length);
-        let convolver = Convolver::new(length);
-        let conv_res = vec![Complex::default(); 9 * length];
+        let (_, chirp_length_b) = Self::chirp_lengths(length);
+        let interp_length = Interpolator::result_len(length);
+        let conv_length = chirp_length_b + interp_length + 2 *(length-1) - 1;
+        let convolver = Convolver::new(conv_length);
+        let conv_res = vec![Complex::default(); conv_length];
 
         Self {
             fft_integer,
@@ -105,6 +109,14 @@ impl Frft {
             v.re *= scale;
             v.im *= scale;
         }
+    }
+
+    const fn chirp_lengths(n: usize) -> (usize, usize) {
+        let ni = n as isize;
+        let ca = (2 * ni - 1) - (-2 * ni + 2);
+        let cb = (4 * ni - 3) - (-4 * ni + 4);
+
+        (ca as usize, cb as usize)
     }
 
     fn chirps(
@@ -232,17 +244,24 @@ impl Frft {
             let sqrt_c_pi = f32::sqrt(c / PI);
             let (chirp_a, chirp_b) = self.chirps(i_n, a);
 
+            let prepend_zeros = iter::repeat(Complex::<f32>::default()).take(n - 1);
+            let append_zeros = prepend_zeros.clone();
             let interped_f = self.interpolator.interp(frac.iter());
+
+            let padded_f = prepend_zeros.chain(interped_f.iter().cloned()).chain(append_zeros);
 
             // % chirp premultiplication
             // f = chrp_a.*f;
-            let f1 = chirp_a.clone().zip(interped_f).map(|(a, b)| a * b);
+            let f1 = chirp_a.clone().zip(padded_f).map(|(a, b)| a * b);
+
 
             // % chirp convolution
             // c = pi/N/sina/4;
             // Faf = fconv(chirp_b,f);
             // Faf = Faf(4*N-3:8*N-7)*sqrt(c/pi);
             self.convolver.conv(chirp_b, f1.clone(), &mut self.conv_res);
+
+            dbg!(self.conv_res.len());
 
             // % chirp post multiplication
             // Faf = chrp_a.*Faf;

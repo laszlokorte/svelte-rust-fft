@@ -9,48 +9,54 @@ pub struct Interpolator {
     conv_result: Vec<Complex<f32>>,
 }
 
+// matlab code:
+// function xint=interp(x)
+// % sinc interpolation
+// N = length(x);
+// y = zeros(2*N-1,1);
+// y(1:2:2*N-1) = x;
+// xint = fconv(y(1:2*N-1), sinc([-(2*N-3):(2*N-3)]'/2));
+// xint = xint(2*N-2:end-2*N+3);
+
 impl Interpolator {
-    pub fn new(length: usize) -> Self {
-        dbg!(length + length * 2 - 1 + 4 * length - 5 - 1);
-        Self {
-            len: length,
-            convolver: Convolver::new(length + length * 2 - 1 + 3 * length - 5 - 1),
-            conv_result: vec![Complex::default(); length + length * 2 - 1 + 3 * length - 5 - 1],
-        }
+    const fn conv_length(length: usize) -> usize {
+        (length * 3 - 1) + (3 * length - 5) - 1
     }
 
-    // sinc from -2N to 2N , length 4N
-    // splice zeros into signal of length N to get signal of length 2N
-    // convolution needs to be of length 6N (4+2)N
-    // from the result the first 2N and last 2N are discarded
-    // yielding a result of length 6N-4N = 2N
+    fn sinc_iter(length: isize) -> impl Iterator<Item=Complex<f32>> {
+        ((-2 * length + 3)..(2 * length - 2)).map(|x| sinc(x as f32 / 2.0))
+    }
 
-    // ----
-    // matlab code:
-    // function xint=interp(x)
-    // % sinc interpolation
-    // N = length(x);
-    // y = zeros(2*N-1,1);
-    // y(1:2:2*N-1) = x;
-    // xint = fconv(y(1:2*N-1), sinc([-(2*N-3):(2*N-3)]'/2));
-    // xint = xint(2*N-2:end-2*N+3);
-    // ---
+    const fn slice_range(length: usize) -> std::ops::Range<usize> {
+        (2 * length - 4)..(Self::conv_length(length) - 2 * length + 2)
+    }
+
+    pub const fn result_len(length: usize) -> usize {
+        let r = Self::slice_range(length);
+
+        r.end - r.start
+    }
+
+    pub fn new(length: usize) -> Self {
+        Self {
+            len: length,
+            convolver: Convolver::new(Interpolator::conv_length(length)),
+            conv_result: vec![Complex::default(); Interpolator::conv_length(length)],
+        }
+    }
+   
     pub fn interp<'s, 'c>(
         &'s mut self,
         signal: impl Iterator<Item = &'c Complex<f32>> + Clone,
     ) -> &'s [Complex<f32>] {
-        let r_len = self.conv_result.len();
-        let n = self.len;
-        let ni = n as i32;
         let interspersed = signal.clone().cloned().intersperse(Complex::default());
 
-        let sinc = ((-2 * ni + 3)..(2 * ni - 2)).map(|x| sinc(x as f32 / 2.0));
+        self.convolver.conv(interspersed, Self::sinc_iter(self.len as isize), &mut self.conv_result);
 
-        self.convolver
-            .conv(interspersed, sinc, &mut self.conv_result);
-
-        &self.conv_result[(2 * n - 4)..(r_len - 2 * n + 2)]
+        &self.conv_result[Self::slice_range(self.len)]
     }
+
+
 
     // expected python results
     // sincinterp(np.array([1, 2, 3]) -> [1.         1.27323954 2.         2.97089227 3.        ]
