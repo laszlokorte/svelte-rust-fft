@@ -388,7 +388,7 @@ mod tests {
             Complex::new(0.0, 0.0),
         ];
 
-        let _expected = [
+        let expected = [
             Complex::new(-0.04139014, 0.21485908),
             Complex::new(-0.15800667, 0.01220657),
             Complex::new(0.1289293, -0.19462559),
@@ -408,6 +408,9 @@ mod tests {
         ];
 
         frft.process_scaled(&mut signal, 0.3);
-        // assert_eq!(expected, signal);
+        for (e, r) in expected.iter().zip(signal.iter()) {
+            assert_approx_eq!(e.re, r.re, 1e-4);
+            assert_approx_eq!(e.im, r.im, 1e-4);
+        }
     }
 }
