@@ -4,15 +4,18 @@ use crate::Complex;
 use crate::Convolver;
 
 pub struct Interpolator {
+    len: usize,
     convolver: Convolver,
     conv_result: Vec<Complex<f32>>,
 }
 
 impl Interpolator {
     pub fn new(length: usize) -> Self {
+        dbg!(length + length * 2 - 1 + 4 * length - 5 - 1);
         Self {
-            convolver: Convolver::new(6 * length),
-            conv_result: vec![Complex::default(); 6 * length],
+            len: length,
+            convolver: Convolver::new(length + length * 2 - 1 + 3 * length - 5 - 1),
+            conv_result: vec![Complex::default(); length + length * 2 - 1 + 3 * length - 5 - 1],
         }
     }
 
@@ -34,16 +37,19 @@ impl Interpolator {
     // ---
     pub fn interp<'s, 'c>(
         &'s mut self,
-        signal: impl Iterator<Item = &'c Complex<f32>>,
+        signal: impl Iterator<Item = &'c Complex<f32>> + Clone,
     ) -> &'s [Complex<f32>] {
-        let n = self.conv_result.len() / 6;
+        let r_len = self.conv_result.len();
+        let n = self.len;
         let ni = n as i32;
-        let interspersed = signal.cloned().intersperse(Complex::default()).skip(1);
-        let sinc = ((-2 * ni)..(2 * ni)).map(|x| sinc(x as f32 / 2.0));
+        let interspersed = signal.clone().cloned().intersperse(Complex::default());
+
+        let sinc = ((-2 * ni + 3)..(2 * ni - 2)).map(|x| sinc(x as f32 / 2.0));
+
         self.convolver
             .conv(interspersed, sinc, &mut self.conv_result);
 
-        &self.conv_result[(2 * n)..(4 * n)]
+        &self.conv_result[(2 * n - 4)..(r_len - 2 * n + 2)]
     }
 
     // expected python results
@@ -67,4 +73,37 @@ impl Interpolator {
     // interp([0,0]) -> [0,0,0]
     // interp([0,1,0]) -> [-5.5511e-17, 6.3662e-01, 1.0000e+00, 6.3662e-01, 1.3878e-17]
     // interp([1,1,1]) -> [1.0000, 1.0610, 1.0000, 1.0610, 1.0000]
+}
+
+#[cfg(test)]
+mod tests {
+
+    use crate::sinc_interp::Interpolator;
+    use crate::Complex;
+    use assert_approx_eq::assert_approx_eq;
+
+    #[test]
+    fn test_interp() {
+        let signal = [
+            Complex::new(1.0, 0.0),
+            Complex::new(2.0, 0.0),
+            Complex::new(3.0, 0.0),
+        ];
+        let mut interpolator = Interpolator::new(3);
+
+        let result = interpolator.interp(signal.iter());
+        let expected = [
+            Complex::new(1., 0.0),
+            Complex::new(1.27323954, 0.0),
+            Complex::new(2., 0.0),
+            Complex::new(2.97089227, 0.0),
+            Complex::new(3., 0.0),
+        ];
+
+        assert_eq!(5, result.len());
+        for (e, r) in expected.iter().zip(result.iter()) {
+            assert_approx_eq!(e.re, r.re, 1e-4);
+            assert_approx_eq!(e.im, r.im, 1e-4);
+        }
+    }
 }
