@@ -282,9 +282,9 @@ mod tests {
         let l1 = c1.last().unwrap();
         let l2 = c2.last().unwrap();
 
-        let a1f = Complex::new(-0.98664215, -0.16290265);
+        let a1f = Complex::new(-0.986_642_1, -0.16290265);
         let a2f = Complex::new(-0.91668974, -0.3995997);
-        let a1l = Complex::new(-0.98664215, -0.16290265);
+        let a1l = Complex::new(-0.986_642_1, -0.16290265);
         let a2l = Complex::new(-0.91668974, -0.3995997);
 
         assert_approx_eq!(a1f.re, f1.re, 1e-4);
@@ -322,37 +322,37 @@ mod tests {
         ];
 
         let expected = [
-            Complex::new(1.00000000e+00, 0.0),
-            Complex::new(6.36619772e-01, 0.0),
-            Complex::new(2.86791718e-17, 0.0),
-            Complex::new(-2.12206591e-01, 0.0),
-            Complex::new(7.61771141e-17, 0.0),
-            Complex::new(1.27323954e-01, 0.0),
-            Complex::new(1.22295308e-16, 0.0),
-            Complex::new(-9.09456818e-02, 0.0),
-            Complex::new(-8.34049199e-17, 0.0),
-            Complex::new(7.07355303e-02, 0.0),
-            Complex::new(6.90604685e-18, 0.0),
-            Complex::new(-5.78745248e-02, 0.0),
-            Complex::new(-1.09289274e-16, 0.0),
-            Complex::new(4.89707517e-02, 0.0),
-            Complex::new(3.90556300e-17, 0.0),
-            Complex::new(-4.24413182e-02, 0.0),
-            Complex::new(-6.20641763e-18, 0.0),
-            Complex::new(3.74482219e-02, 0.0),
-            Complex::new(-3.94745964e-17, 0.0),
-            Complex::new(-3.35063038e-02, 0.0),
-            Complex::new(-6.24973922e-17, 0.0),
-            Complex::new(3.03152273e-02, 0.0),
-            Complex::new(1.14781320e-16, 0.0),
-            Complex::new(-2.76791205e-02, 0.0),
-            Complex::new(-1.70677798e-18, 0.0),
-            Complex::new(2.54647909e-02, 0.0),
-            Complex::new(-4.58623477e-17, 0.0),
-            Complex::new(-2.35785101e-02, 0.0),
-            Complex::new(-1.49001116e-17, 0.0),
-            Complex::new(2.19524059e-02, 0.0),
-            Complex::new(-3.86354293e-17, 0.0),
+            Complex::new(1.00000000, 0.0),
+            Complex::new(6.366_197_5e-1, 0.0),
+            Complex::new(2.867_917_2e-17, 0.0),
+            Complex::new(-2.122_065_9e-1, 0.0),
+            Complex::new(7.617_711_4e-17, 0.0),
+            Complex::new(1.273_239_6e-1, 0.0),
+            Complex::new(1.222_953e-16, 0.0),
+            Complex::new(-9.094_568e-2, 0.0),
+            Complex::new(-8.340_492e-17, 0.0),
+            Complex::new(7.073_553e-2, 0.0),
+            Complex::new(6.906_047e-18, 0.0),
+            Complex::new(-5.787_452_3e-2, 0.0),
+            Complex::new(-1.092_892_7e-16, 0.0),
+            Complex::new(4.897_075e-2, 0.0),
+            Complex::new(3.905_563e-17, 0.0),
+            Complex::new(-4.244_132e-2, 0.0),
+            Complex::new(-6.206_417_6e-18, 0.0),
+            Complex::new(3.744_822_4e-2, 0.0),
+            Complex::new(-3.947_459_7e-17, 0.0),
+            Complex::new(-3.350_630_4e-2, 0.0),
+            Complex::new(-6.249_739e-17, 0.0),
+            Complex::new(3.031_522_8e-2, 0.0),
+            Complex::new(1.147_813_2e-16, 0.0),
+            Complex::new(-2.767_912_1e-2, 0.0),
+            Complex::new(-1.706_778e-18, 0.0),
+            Complex::new(2.546_479_2e-2, 0.0),
+            Complex::new(-4.586_234_7e-17, 0.0),
+            Complex::new(-2.357_851e-2, 0.0),
+            Complex::new(-1.490_011_2e-17, 0.0),
+            Complex::new(2.195_240_6e-2, 0.0),
+            Complex::new(-3.863_543e-17, 0.0),
         ];
 
         let interped_f = frft.interpolator.interp(signal.iter());

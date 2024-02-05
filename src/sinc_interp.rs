@@ -94,9 +94,9 @@ mod tests {
         let result = interpolator.interp(signal.iter());
         let expected = [
             Complex::new(1., 0.0),
-            Complex::new(1.27323954, 0.0),
+            Complex::new(1.273_239_5, 0.0),
             Complex::new(2., 0.0),
-            Complex::new(2.97089227, 0.0),
+            Complex::new(2.970_892_2, 0.0),
             Complex::new(3., 0.0),
         ];
 
