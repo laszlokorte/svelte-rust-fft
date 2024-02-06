@@ -167,6 +167,7 @@ impl Frft {
             return (1.0 / f_n, None);
         } else if a == 2.0 {
             frac.reverse();
+            frac.rotate_right(1);
 
             return (1.0, None);
         } else if a == 3.0 {
@@ -174,17 +175,17 @@ impl Frft {
             self.fft_integer.process(frac);
             frac.rotate_right(n / 2);
             frac.reverse();
+            frac.rotate_right(1);
 
             return (1.0 / f_n, None);
         } else {
             let mut scale_factor = 1.0;
 
-            let mut do_rev = if a > 2.0 {
+            if a > 2.0 {
+                frac.reverse();
+                frac.rotate_right(1);
                 a -= 2.0;
-                true
-            } else {
-                false
-            };
+            } 
 
             if a > 1.5 {
                 a -= 1.0;
@@ -197,17 +198,14 @@ impl Frft {
             if a < 0.5 {
                 a += 1.0;
 
-                frac.rotate_right(n / 2 - 1);
+                frac.rotate_right(n / 2);
+                frac.reverse();
+                frac.rotate_right(1);
                 self.fft_integer.process(frac);
-                frac.rotate_right(n / 2 - 1);
+                frac.rotate_right(n / 2);
 
-                do_rev = !do_rev;
 
                 scale_factor *= f_n;
-            }
-
-            if do_rev {
-                frac.reverse();
             }
 
             return (scale_factor, Some(a));

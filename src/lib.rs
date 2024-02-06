@@ -114,8 +114,8 @@ impl Signal {
     }
 
     pub fn update_frac(&mut self, fraction: f32) {
-        self.frac.clone_from(&self.time);
-        self.frft2.process(&mut self.frac, fraction);
+        //self.frac.clone_from(&self.time);
+        //self.frft2.process(&mut self.frac, fraction);
         self.frac.clone_from(&self.time);
         self.frft.process(&mut self.frac, fraction);
 
