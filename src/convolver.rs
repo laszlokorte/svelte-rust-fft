@@ -56,7 +56,6 @@ impl Convolver {
         self.conv_spectral(a, b, into);
         self.fft_conv.process(into);
         into.reverse();
-
         let scale = self.pad_a.len() as f32;
 
         for r in into.iter_mut() {

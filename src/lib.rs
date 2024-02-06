@@ -1,18 +1,20 @@
 #![feature(iter_array_chunks)]
 #![feature(iter_intersperse)]
 
-mod convolver;
+pub mod convolver;
+pub mod sinc_interp;
 pub mod frft;
-mod frft2;
+pub mod frft2;
 mod iter;
 mod sinc;
-pub mod sinc_interp;
 mod utils;
 
 use crate::convolver::conv_length;
 use crate::convolver::Convolver;
-use crate::frft::Frft;
-use crate::frft2::Frft2;
+#[cfg(not(feature = "frft2"))]
+use crate::frft::Frft as FrftImpl;
+#[cfg(feature = "frft2")]
+use crate::frft2::Frft2 as FrftImpl;
 use crate::iter::iter_into_slice;
 use rustfft::Fft;
 use rustfft::{num_complex::Complex, FftPlanner};
@@ -30,8 +32,7 @@ pub struct Signal {
     freq: Vec<Complex<f32>>,
     frac: Vec<Complex<f32>>,
 
-    frft2: Frft2,
-    frft: Frft,
+    frft: FrftImpl,
 }
 
 fn do_fft(fft: &Arc<dyn Fft<f32>>, source: &Vec<Complex<f32>>, target: &mut Vec<Complex<f32>>) {
@@ -81,8 +82,7 @@ impl Signal {
 
         Self {
             fft_integer,
-            frft2: Frft2::new(length),
-            frft: Frft::new(length),
+            frft: FrftImpl::new(length),
             time,
             freq,
             frac,
@@ -114,8 +114,6 @@ impl Signal {
     }
 
     pub fn update_frac(&mut self, fraction: f32) {
-        //self.frac.clone_from(&self.time);
-        //self.frft2.process(&mut self.frac, fraction);
         self.frac.clone_from(&self.time);
         self.frft.process(&mut self.frac, fraction);
 

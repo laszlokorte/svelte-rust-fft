@@ -1,3 +1,5 @@
+#![cfg(feature = "frft2")]
+
 use crate::conv_length;
 use crate::iter_into_slice;
 use crate::sinc::sinc;
@@ -268,7 +270,7 @@ impl Frft2 {
 #[cfg(test)]
 mod tests {
     use crate::Complex;
-    use crate::Frft2;
+    use crate::frft2::Frft2;
 
     #[test]
     fn frft2_0() {
