@@ -23,7 +23,7 @@ impl Interpolator {
         (length * 3 - 1) + (3 * length - 5) - 1
     }
 
-    fn sinc_iter(length: isize) -> impl Iterator<Item=Complex<f32>> {
+    fn sinc_iter(length: isize) -> impl Iterator<Item = Complex<f32>> {
         ((-2 * length + 3)..(2 * length - 2)).map(|x| sinc(x as f32 / 2.0))
     }
 
@@ -44,19 +44,21 @@ impl Interpolator {
             conv_result: vec![Complex::default(); Interpolator::conv_length(length)],
         }
     }
-   
+
     pub fn interp<'s, 'c>(
         &'s mut self,
         signal: impl Iterator<Item = &'c Complex<f32>> + Clone,
     ) -> &'s [Complex<f32>] {
         let interspersed = signal.clone().cloned().intersperse(Complex::default());
 
-        self.convolver.conv(interspersed, Self::sinc_iter(self.len as isize), &mut self.conv_result);
+        self.convolver.conv(
+            interspersed,
+            Self::sinc_iter(self.len as isize),
+            &mut self.conv_result,
+        );
 
         &self.conv_result[Self::slice_range(self.len)]
     }
-
-
 
     // expected python results
     // sincinterp(np.array([1, 2, 3]) -> [1.         1.27323954 2.         2.97089227 3.        ]

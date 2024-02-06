@@ -1,7 +1,7 @@
-use core::iter;
 use crate::iter_into_slice;
 use crate::sinc_interp::Interpolator;
 use crate::Convolver;
+use core::iter;
 use std::f32::consts::PI;
 
 use crate::Complex;
@@ -86,7 +86,7 @@ impl Frft {
         let interpolator = Interpolator::new(length);
         let (_, chirp_length_b) = Self::chirp_lengths(length);
         let interp_length = Interpolator::result_len(length);
-        let conv_length = chirp_length_b + interp_length + 2 *(length-1) - 1;
+        let conv_length = chirp_length_b + interp_length + 2 * (length - 1) - 1;
         let convolver = Convolver::new(conv_length);
         let conv_res = vec![Complex::default(); conv_length];
 
@@ -167,7 +167,6 @@ impl Frft {
             return (1.0 / f_n, None);
         } else if a == 2.0 {
             frac.reverse();
-            frac.rotate_right(1);
 
             return (1.0, None);
         } else if a == 3.0 {
@@ -175,7 +174,6 @@ impl Frft {
             self.fft_integer.process(frac);
             frac.rotate_right(n / 2);
             frac.reverse();
-            frac.rotate_right(1);
 
             return (1.0 / f_n, None);
         } else {
@@ -183,7 +181,6 @@ impl Frft {
 
             let mut do_rev = if a > 2.0 {
                 a -= 2.0;
-                frac.rotate_right(1);
                 true
             } else {
                 false
@@ -194,31 +191,23 @@ impl Frft {
                 frac.rotate_right(n / 2);
                 self.fft_integer.process(frac);
                 frac.rotate_right(n / 2);
-                frac.rotate_left(1);
 
                 scale_factor /= f_n;
             }
             if a < 0.5 {
                 a += 1.0;
 
-                if do_rev {
-                    frac.rotate_left(1);
-                }
-                frac.rotate_right(n / 2);
+                frac.rotate_right(n / 2 - 1);
                 self.fft_integer.process(frac);
-                frac.rotate_right(n / 2);
-                frac.rotate_left(1);
+                frac.rotate_right(n / 2 - 1);
 
                 do_rev = !do_rev;
 
                 scale_factor *= f_n;
-            } else if do_rev {
-                frac.rotate_left(1);
             }
 
             if do_rev {
                 frac.reverse();
-                frac.rotate_right(1);
             }
 
             return (scale_factor, Some(a));
@@ -243,17 +232,19 @@ impl Frft {
             let c = PI / f_n / sina / 4.0;
             let sqrt_c_pi = f32::sqrt(c / PI);
             let (chirp_a, chirp_b) = self.chirps(i_n, a);
+            let normalizer = Complex::new(0.0, -(1.0 - a) * PI / 4.0).exp(); // exp(-i*(1-a)*pi/4)
 
             let prepend_zeros = iter::repeat(Complex::<f32>::default()).take(n - 1);
             let append_zeros = prepend_zeros.clone();
             let interped_f = self.interpolator.interp(frac.iter());
 
-            let padded_f = prepend_zeros.chain(interped_f.iter().cloned()).chain(append_zeros);
+            let padded_f = prepend_zeros
+                .chain(interped_f.iter().cloned())
+                .chain(append_zeros);
 
             // % chirp premultiplication
             // f = chrp_a.*f;
             let f1 = chirp_a.clone().zip(padded_f).map(|(a, b)| a * b);
-
 
             // % chirp convolution
             // c = pi/N/sina/4;
@@ -261,21 +252,21 @@ impl Frft {
             // Faf = Faf(4*N-3:8*N-7)*sqrt(c/pi);
             self.convolver.conv(chirp_b, f1.clone(), &mut self.conv_res);
 
-            dbg!(self.conv_res.len());
-
             // % chirp post multiplication
             // Faf = chrp_a.*Faf;
             let f2 = self
                 .conv_res
                 .iter()
-                //.skip(4 * n - 3)
+                .skip(4 * n - 4)
                 .zip(chirp_a)
                 .map(|(a, b)| a * b * sqrt_c_pi);
 
-            iter_into_slice(f2.step_by(2), frac);
+            // dbg!(f2.clone().skip(n).step_by(2).collect::<Vec<_>>());
+
+            iter_into_slice(f2.skip(n).step_by(2).map(|z| z * normalizer), frac);
 
             // % normalizing constant
-            // Faf = exp(-i*(1-a)*pi/4)*Faf(N:2:end-N+1);
+            // Faf = *Faf(N:2:end-N+1);
         }
 
         scale_factor
@@ -376,8 +367,6 @@ mod tests {
 
         let interped_f = frft.interpolator.interp(signal.iter());
 
-        dbg!(interped_f);
-
         assert_eq!(31, interped_f.len());
         for (e, r) in expected.iter().zip(interped_f.iter()) {
             assert_approx_eq!(e.re, r.re, 1e-4);
@@ -408,25 +397,25 @@ mod tests {
         ];
 
         let expected = [
-            Complex::new(-0.04139014, 0.21485908),
-            Complex::new(-0.15800667, 0.01220657),
-            Complex::new(0.1289293, -0.19462559),
-            Complex::new(-0.10956088, 0.15421447),
-            Complex::new(0.09545444, -0.06652694),
-            Complex::new(-0.06943505, 0.00793037),
-            Complex::new(0.04457944, 0.01806855),
-            Complex::new(-0.03091022, -0.02609895),
-            Complex::new(0.03091022, 0.02609895),
-            Complex::new(-0.04457944, -0.01806855),
-            Complex::new(0.06943505, -0.00793037),
-            Complex::new(-0.09545444, 0.06652694),
-            Complex::new(0.10956088, -0.15421447),
-            Complex::new(-0.1289293, 0.19462559),
-            Complex::new(0.15800667, -0.01220657),
-            Complex::new(0.04139014, -0.21485908),
+            Complex::new(0.2367073, -0.03119254),
+            Complex::new(-0.15997362, -0.23509508),
+            Complex::new(0.03888371, 0.16372166),
+            Complex::new(-0.02295985, -0.08417339),
+            Complex::new(0.02370905, 0.0430502),
+            Complex::new(-0.02271208, -0.02263486),
+            Complex::new(0.02067918, 0.0127086),
+            Complex::new(-0.01929882, -0.00867325),
+            Complex::new(0.01929882, 0.00867325),
+            Complex::new(-0.02067918, -0.0127086),
+            Complex::new(0.02271208, 0.02263486),
+            Complex::new(-0.02370905, -0.0430502),
+            Complex::new(0.02295985, 0.08417339),
+            Complex::new(-0.03888371, -0.16372166),
+            Complex::new(0.15997362, 0.23509508),
+            Complex::new(-0.2367073, 0.03119254),
         ];
 
-        frft.process_scaled(&mut signal, 0.3);
+        frft.process_scaled(&mut signal, 1.8);
         for (e, r) in expected.iter().zip(signal.iter()) {
             assert_approx_eq!(e.re, r.re, 1e-4);
             assert_approx_eq!(e.im, r.im, 1e-4);
