@@ -238,6 +238,7 @@ class LineSegmentsGeometry extends InstancedBufferGeometry {
     }
     if (this.boundingBox === null) {
       this.boundingBox = new Box3();
+      return
     }
     const start = this.attributes.instanceStart;
     const end = this.attributes.instanceEnd;
@@ -250,11 +251,12 @@ class LineSegmentsGeometry extends InstancedBufferGeometry {
   computeBoundingSphere() {
     if(this.dims != 3) {
       this.boundingSphere = new Sphere();
-      this.boundingSphere.radius = 0.1
+      this.boundingSphere.radius = Infinity
       return
     }
     if (this.boundingSphere === null) {
       this.boundingSphere = new Sphere();
+      this.boundingSphere.radius = Infinity
     }
     if (this.boundingBox === null) {
       this.computeBoundingBox();

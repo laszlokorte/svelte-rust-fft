@@ -228,6 +228,8 @@
 		scrollbar-gutter: stable;
 		display: block;
 		position: fixed;
+		width: 100%;
+		height: 100%;
 		inset: 0;
 		background: #effbff;
 		background: linear-gradient(#effbff, #cff9ff);

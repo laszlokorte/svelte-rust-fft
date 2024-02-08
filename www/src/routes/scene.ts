@@ -4,6 +4,7 @@ import {LineSegments} from './lines/LineSegments.js'
 import {LineMaterial} from './lines/LineMaterial.js'
 import {LineSegmentsGeometry} from './lines/LineSegmentsGeometry.js'
 import { DecalGeometry } from 'three/addons/geometries/DecalGeometry';
+import { VRButton } from 'three/addons/webxr/VRButton.js';
 
 export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
 
@@ -712,8 +713,32 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
 
   const labelVec = new THREE.Vector3();
   let rotationSubscriber = null
+  const renderTargetSize = new THREE.Vector2();
 
   const animate = () => {
+
+    if(resizeRendererToDisplaySize(renderer)) {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      controls.zoomSpeed = 2*window.devicePixelRatio;
+      camera.updateProjectionMatrix();
+
+      
+      camera.setViewOffset(camFrame.offsetWidth, camFrame.offsetHeight, -camFrame.offsetLeft, -camFrame.offsetTop, window.innerWidth, window.innerHeight );
+    }
+
+    if(renderer.xr.isPresenting) {
+      renderer.getSize(renderTargetSize)
+      
+      for(let lm of lineMats) {
+        lm.resolution.set(renderTargetSize.x/2, renderTargetSize.y);
+      }
+    } else { 
+      renderer.getSize(renderTargetSize)
+      
+      for(let lm of lineMats) {
+        lm.resolution.set(renderTargetSize.x, renderTargetSize.y);
+      }
+    }
 
     controls.update();
     dirLight.position.copy(camera.position).sub(new THREE.Vector3(5,-15,1))
@@ -734,34 +759,30 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
     renderer.render(scene, camera);
   };
 
-  const resize = () => {
-    renderer.setSize(window.innerWidth, window.innerHeight)
-    renderer.setPixelRatio(window.devicePixelRatio);
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.setViewOffset(camFrame.offsetWidth, camFrame.offsetHeight, -camFrame.offsetLeft, -camFrame.offsetTop, window.innerWidth, window.innerHeight );
-    controls.zoomSpeed = 2*window.devicePixelRatio;
-    camera.updateProjectionMatrix();
-
-    for(let lm of lineMats) {
-      lm.resolution.set(window.innerWidth, window.innerHeight);
+  function resizeRendererToDisplaySize(renderer) {
+    const canvas = renderer.domElement;
+    const pixelRatio = window.devicePixelRatio;
+    const width  = Math.floor( canvas.clientWidth  * pixelRatio );
+    const height = Math.floor( canvas.clientHeight * pixelRatio );
+    const needResize = canvas.width !== width || canvas.height !== height;
+    if (needResize) {
+      renderer.setSize(width, height, false);
     }
-  };
+    return needResize;
+  }
 
-  resize();
-
-  var ro = new ResizeObserver(resize);
-
-  ro.observe(camFrame);
-
+  renderer.xr.enabled = true;
+  renderer.xr.setFramebufferScaleFactor( 2.0 ); 
   renderer.setAnimationLoop(animate);
 
-  window.addEventListener('resize', resize);
+  const vrButton = VRButton.createButton( renderer );
+  document.body.appendChild( vrButton );
+
 
   return {
     dispose: () => {
-      window.removeEventListener('resize', resize);
+      document.body.removeChild(vrButton)
       renderer.dispose()
-      ro.disconnect()
     },
     setFractionalRotation(frac) {
       axees[4].rotation.y = frac
