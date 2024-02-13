@@ -138,6 +138,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
 
 
   let lineMats = []
+  let labelMats = []
   let barMats = []
   let polarMaterials = []
   let polarHide = []
@@ -156,6 +157,8 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
   let cubeSides = []
   let labels = []
   let sides = new THREE.Group();
+  let root = new THREE.Group();
+  scene.add(root)
 
   let i = 1;
   for(let {rot, color, shadow, showAxis, skip, curve, xAxisLabel, reflector, sideLabelIndex} of rotations) {
@@ -328,6 +331,10 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
     lineMats.push(axisMaterial)
 
     lineMats.push(labelMatX, labelMatY, labelMatZ)
+    labelMats.push(labelMatX, labelMatY, labelMatZ)
+    labelMatX.baseWidth = 6
+    labelMatY.baseWidth = 6
+    labelMatZ.baseWidth = 6
 
  
     xLabel.renderOrder = 10 + i*2+150
@@ -353,6 +360,9 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
       sideLabel.renderOrder = 4
       sideLabel.position.x = 4.5;
       sideLabel.position.y = -4.3;
+
+      labelMats.push(sideLabelMat)
+      sideLabelMat.baseWidth = 10
 
       lineMats.push(sideLabelMat)
 
@@ -650,11 +660,11 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
   dirLight.position.x = 7
   dirLight.position.y = 11
   dirLight.position.z = 13
-  scene.add(dirLight);
+  root.add(dirLight);
 
 
-  scene.add(light);
-  scene.add(sides);
+  root.add(light);
+  root.add(sides);
 
   const socketMat = new THREE.MeshLambertMaterial({ color: 0x333333 });
   socketMat.depthTest = false
@@ -668,32 +678,41 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
   camera.position.z = 6;
   camera.position.y = 4;
 
-  scene.add(socket)
+  root.add(socket)
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: el, alpha: true });
   renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setClearColor( 0xeffbff, 1);
   
   const controls = new OrbitControls( camera, renderer.domElement );
 
+  const upVector = new THREE.Vector3(1,1/stretchHeight,1);
+
   controls.addEventListener('change', (e) => {
-    const newLength = camera.position.length()
+    if(renderer.xr.isPresenting) {
+    } else {
+      const newLength = camera.position.length()
 
-
-    if(newLength < 8.5 && currentFocus === null) {
-      focusSide(indexOfSmallest(refRotations.map((x) => x.angleTo(new THREE.Vector3(1,1/stretchHeight,1).multiply(camera.position)))))
-    } else if(newLength > 8.5 && currentFocus === indexOfSmallest(refRotations.map((x) => x.angleTo(new THREE.Vector3(1,1/stretchHeight,1).multiply(camera.position))), Math.PI/8)) {
-      focusSide(null)
+      if(newLength < 8.5 && currentFocus === null) {
+        focusSide(indexOfSmallest(refRotations.map((x) => x.angleTo(upVector.set(1,1/stretchHeight,1).multiply(camera.position)))))
+      } else if(newLength > 8.5 && currentFocus === indexOfSmallest(refRotations.map((x) => x.angleTo(upVector.set(1,1/stretchHeight,1).multiply(camera.position))), Math.PI/8)) {
+        focusSide(null)
+      }
     }
   })
 
   controls.addEventListener('end', (e) => {
-    const newLength = camera.position.length()
+    if(renderer.xr.isPresenting) {
+      return 
+    } else {
+      const newLength = camera.position.length()
 
 
-    if(newLength < 8.5 && currentFocus === null) {
-      focusSide(indexOfSmallest(refRotations.map((x) => x.angleTo(new THREE.Vector3(1,1/stretchHeight,1).multiply(camera.position)))))
-    } else if(newLength > 8.5 && currentFocus === indexOfSmallest(refRotations.map((x) => x.angleTo(new THREE.Vector3(1,1/stretchHeight,1).multiply(camera.position))))) {
-      focusSide(null)
+      if(newLength < 8.5 && currentFocus === null) {
+        focusSide(indexOfSmallest(refRotations.map((x) => x.angleTo(upVector.set(1,1/stretchHeight,1).multiply(camera.position)))))
+      } else if(newLength > 8.5 && currentFocus === indexOfSmallest(refRotations.map((x) => x.angleTo(upVector.set(1,1/stretchHeight,1).multiply(camera.position))))) {
+        focusSide(null)
+      }
     }
   })
 
@@ -715,6 +734,9 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
   let rotationSubscriber = null
   const renderTargetSize = new THREE.Vector2();
 
+  const blub = new THREE.Vector3();
+  const bla = new THREE.Vector3();
+
   const animate = () => {
 
     if(resizeRendererToDisplaySize(renderer)) {
@@ -726,18 +748,62 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
       camera.setViewOffset(camFrame.offsetWidth, camFrame.offsetHeight, -camFrame.offsetLeft, -camFrame.offsetTop, window.innerWidth, window.innerHeight );
     }
 
-    if(renderer.xr.isPresenting) {
+    if(renderer.xr.isPresenting && renderer.xr.getController(1)) {
+      let controllerPos = renderer.xr.getController(1).position;
+      let controllerRot = renderer.xr.getController(1).rotation;
+      root.position.set(controllerPos.x, controllerPos.y, controllerPos.z)
+      root.rotation.set(controllerRot.x, controllerRot.y, controllerRot.z)
+      root.scale.set(0.05,0.05,0.05)
+
       renderer.getSize(renderTargetSize)
+
+      
+
+      const transformedRefs = refRotations.map((x) => {
+        blub.copy(x)
+        blub.applyEuler(root.rotation)
+
+        bla.copy(camera.position)
+        bla.sub(root.position)
+
+        return blub.angleTo(bla)
+      })
+
+      const newLength = camera.position.distanceTo(controllerPos)
+
+      if(newLength < 8.5 * 0.05 && currentFocus === null) {
+        focusSide(indexOfSmallest(transformedRefs))
+      } else if(newLength > 8.5 * 0.05 && currentFocus === indexOfSmallest(transformedRefs)) {
+        focusSide(null)
+      }
       
       for(let lm of lineMats) {
         lm.resolution.set(renderTargetSize.x/2, renderTargetSize.y);
       }
+
+      for(let lblMat of labelMats) {
+        lblMat.uniforms.linewidth.value = (lblMat.baseWidth/Math.max(0.01, root.position.distanceTo(camera.position)))
+      }
+
+      for(let bm of barMats) {
+        bm.opacity = 0.9 - Math.min(0.9, Math.max(0, (camera.position.distanceTo(root.position)/0.05 - 4)/10))
+      }
+
     } else { 
-      renderer.getSize(renderTargetSize)
+
+      root.position.set(0,0,0)
+      root.rotation.set(0,0,0)
+      root.scale.set(1,1,1)
       
       for(let lm of lineMats) {
-        lm.resolution.set(renderTargetSize.x, renderTargetSize.y);
+        lm.resolution.set(window.innerWidth, window.innerHeight);
       }
+
+
+      for(let bm of barMats) {
+        bm.opacity = 0.9 - Math.min(0.9, Math.max(0, (camera.position.distanceTo(root.position) - 4)/10))
+      }
+
     }
 
     controls.update();
@@ -748,10 +814,6 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
       rotationSubscriber(((2*Math.atan2(camera.position.x, camera.position.z) / Math.PI + 1)%4 + 4)%4)
     }
 
-    for(let bm of barMats) {
-      bm.opacity = 0.9 - Math.min(0.9, Math.max(0, (camera.position.length() - 4)/10))
-    }
-
     for(let label of labels) {
       label.lookAt(camera.getWorldPosition(labelVec))
     }
@@ -759,12 +821,14 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
     renderer.render(scene, camera);
   };
 
+  let wasPresenting = false
   function resizeRendererToDisplaySize(renderer) {
     const canvas = renderer.domElement;
     const pixelRatio = window.devicePixelRatio;
     const width  = Math.floor( canvas.clientWidth  * pixelRatio );
     const height = Math.floor( canvas.clientHeight * pixelRatio );
-    const needResize = canvas.width !== width || canvas.height !== height;
+    const needResize = canvas.width !== width || canvas.height !== height || wasPresenting !== renderer.xr.isPresenting;
+    wasPresenting = renderer.xr.isPresenting
     if (needResize) {
       renderer.setSize(width, height, false);
     }
