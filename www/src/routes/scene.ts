@@ -689,8 +689,7 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
   const upVector = new THREE.Vector3(1,1/stretchHeight,1);
 
   controls.addEventListener('change', (e) => {
-    if(renderer.xr.isPresenting) {
-    } else {
+    if(!renderer.xr.isPresenting) {
       const newLength = camera.position.length()
 
       if(newLength < 8.5 && currentFocus === null) {
@@ -702,11 +701,8 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
   })
 
   controls.addEventListener('end', (e) => {
-    if(renderer.xr.isPresenting) {
-      return 
-    } else {
+    if(!renderer.xr.isPresenting) {
       const newLength = camera.position.length()
-
 
       if(newLength < 8.5 && currentFocus === null) {
         focusSide(indexOfSmallest(refRotations.map((x) => x.angleTo(upVector.set(1,1/stretchHeight,1).multiply(camera.position)))))
@@ -736,6 +732,23 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
 
   const blub = new THREE.Vector3();
   const bla = new THREE.Vector3();
+  let vrController;
+  let currentSession = null
+
+  renderer.xr.addEventListener( 'sessionstart', function() {
+    currentSession = renderer.xr.getSession();
+    vrController = renderer.xr.getController(0);
+    root.scale.set(0.05,0.05,0.05)
+  });
+
+  renderer.xr.addEventListener( 'sessionend', function() {
+    vrController = null
+    currentSession = null
+
+    root.position.set(0,0,0)
+    root.rotation.set(0,0,0)
+    root.scale.set(1,1,1)
+  });
 
   const animate = () => {
 
@@ -748,12 +761,23 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
       camera.setViewOffset(camFrame.offsetWidth, camFrame.offsetHeight, -camFrame.offsetLeft, -camFrame.offsetTop, window.innerWidth, window.innerHeight );
     }
 
-    if(renderer.xr.isPresenting && renderer.xr.getController(1)) {
-      let controllerPos = renderer.xr.getController(1).position;
-      let controllerRot = renderer.xr.getController(1).rotation;
+    if(renderer.xr.isPresenting && vrController !==null) {
+      
+      for(let s = 0; s<currentSession.inputSources.length; s++) {
+        const gamepad = currentSession.inputSources[s].gamepad
+        for(let b =0;b<gamepad.buttons.length;b++) {
+          const button = gamepad.buttons[b];
+
+          if (button.pressed && b == 0 && renderer.xr.getController(s)) {
+            vrController = renderer.xr.getController(s);
+          }
+        }
+      }
+
+      let controllerPos = vrController.position;
+      let controllerRot = vrController.rotation;
       root.position.set(controllerPos.x, controllerPos.y, controllerPos.z)
       root.rotation.set(controllerRot.x, controllerRot.y, controllerRot.z)
-      root.scale.set(0.05,0.05,0.05)
 
       renderer.getSize(renderTargetSize)
 
@@ -791,9 +815,6 @@ export const createScene = (el : HTMLCanvasElement, camFrame: HTMLElement) => {
 
     } else { 
 
-      root.position.set(0,0,0)
-      root.rotation.set(0,0,0)
-      root.scale.set(1,1,1)
       
       for(let lm of lineMats) {
         lm.resolution.set(window.innerWidth, window.innerHeight);
