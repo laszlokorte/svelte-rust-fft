@@ -60,8 +60,7 @@ fn do_fft(fft: &Arc<dyn Fft<f32>>, source: &Vec<Complex<f32>>, target: &mut Vec<
     };
 
     for v in target.iter_mut() {
-        v.re *= scale;
-        v.im *= scale;
+        *v *= scale;
     }
 }
 
@@ -109,6 +108,45 @@ impl Signal {
         do_fft(&self.fft_integer, &self.time, &mut self.freq);
     }
 
+    pub fn update_freq_with_cepstrum(&mut self, interp: f32) {
+        do_fft(&self.fft_integer, &self.time, &mut self.freq);
+
+        let scale_nominator = self
+            .freq
+            .iter()
+            .cloned()
+            .map(|z| z.norm())
+            .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Less))
+            .unwrap_or(1.0);
+
+        for bin in &mut self.freq {
+            *bin = *bin * (1.0-interp) + interp * Complex::new(bin.norm().max(0.0001).ln(), bin.arg());
+        }
+
+        let scale_denom = self
+            .freq
+            .iter()
+            .cloned()
+            .map(|z| z.norm())
+            .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Less))
+            .unwrap_or(1.0);
+
+
+        let scale = if scale_denom != 0.0 {
+            scale_nominator / scale_denom
+        } else {
+            1.0
+        };
+
+        for v in self.freq.iter_mut() {
+            *v *= scale;
+        }
+
+        do_fft(&self.fft_integer, &self.freq, &mut self.time);
+
+        self.time.reverse();
+    }
+
     pub fn update_time(&mut self) {
         do_fft(&self.fft_integer, &self.freq, &mut self.time);
     }
@@ -138,8 +176,7 @@ impl Signal {
         };
 
         for v in self.frac.iter_mut() {
-            v.re *= scale;
-            v.im *= scale;
+            *v *= scale;
         }
     }
 }

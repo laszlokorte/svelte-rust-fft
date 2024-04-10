@@ -25,6 +25,7 @@
   let scene = null
   let snap = false
   let fraction = 0
+  let cepstrum = 0
   let freq = 0
   let phase = 0
   let amplitude = 1
@@ -150,7 +151,7 @@
   		}
   	}
 
-  	signal.update_freq()
+  	signal.update_freq_with_cepstrum(cepstrum)
   	signal.update_frac(fraction)
 
   	scene.setFractionalRotation(fraction * Math.PI/2)
@@ -483,6 +484,11 @@
 					
 					<label><input type="checkbox" bind:checked={syncRot}> Sync to cam</label>
 				<hr>
+
+				<label for="control_cepstrum">
+					<span style:display="flex" style:gap="0.2em" style:white-space="nowrap">Cepstrum: <output>{decimalFormatSigned.format(cepstrum)}</output></span>
+					<input type="range" min="0" max="1" step="0.01" bind:value={cepstrum} id="control_cepstrum"></label>
+									<hr>
 				<strong>View</strong><br>
 				<div class="checkbox-list">
 					<label><input type="checkbox" bind:checked={circular}> Cyclic axis</label>
