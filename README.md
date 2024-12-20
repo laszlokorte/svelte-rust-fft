@@ -4,6 +4,8 @@ Discrete Fourier Transform in Svelte+ThreeJS+Rust+WASM
 
 ![Screenshot of the UI](preview.png)
 
+[Live Demo](https://static.laszlokorte.de/frft-cube/) | [Video Demo](https://www.youtube.com/watch?v=Xe2Ob1gPqlg)
+
 ## Build WASM module
 
 ```sh
