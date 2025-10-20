@@ -13,64 +13,64 @@ import {
   UniformsUtils,
   Vector2,
   Vector3,
-  Texture
-} from 'three';
+  Texture,
+} from "three";
 UniformsLib.line = {
   startProjectionMul: {
-    value: new Vector3(1, 1, 1)
+    value: new Vector3(1, 1, 1),
   },
   startProjectionAdd: {
-    value: new Vector3(0, 0, 0)
+    value: new Vector3(0, 0, 0),
   },
   endProjectionMul: {
-    value: new Vector3(1, 1, 1)
+    value: new Vector3(1, 1, 1),
   },
   endProjectionAdd: {
-    value: new Vector3(0, 0, 0)
+    value: new Vector3(0, 0, 0),
   },
   linewidth: {
-    value: 1
+    value: 1,
   },
   polarSourceLength: {
-    value: 1
+    value: 1,
   },
   polarSkip: {
-    value: 1
+    value: 1,
   },
   polarRadiusBase: {
-    value: 1
+    value: 1,
   },
   polarRadiusScale: {
-    value: 1
+    value: 1,
   },
   project2DStart: {
-  	value: new Vector3(0.0, 0.0, 0.0),
+    value: new Vector3(0.0, 0.0, 0.0),
   },
-	project2DEnd: {
-  	value: new Vector3(0.0, 0.0, 1.0),
-	},
-	project2DUp: {
-  	value: new Vector3(1, 0, 0),
-	},
-	project2DSide: {
-  	value: new Vector3(0, 1, 0),
-	},
+  project2DEnd: {
+    value: new Vector3(0.0, 0.0, 1.0),
+  },
+  project2DUp: {
+    value: new Vector3(1, 0, 0),
+  },
+  project2DSide: {
+    value: new Vector3(0, 1, 0),
+  },
   instanceCount: {
-    value: 1
+    value: 1,
   },
   alphaMap: {
-  	type: 't',
-  	value: new Texture(),
+    type: "t",
+    value: new Texture(),
   },
   resolution: {
-    value: new Vector2(100, 100)
+    value: new Vector2(100, 100),
   },
 };
-ShaderLib['line'] = {
+ShaderLib["line"] = {
   uniforms: UniformsUtils.merge([
     UniformsLib.common,
     UniformsLib.fog,
-    UniformsLib.line
+    UniformsLib.line,
   ]),
   vertexShader: `
 		#include <common>
@@ -197,7 +197,7 @@ ShaderLib['line'] = {
 			#endif
 
 
-			
+
 
 			vec4 start = modelViewMatrix * vec4(inStart, 1.0);
 			vec4 end = modelViewMatrix * vec4(inEnd, 1.0);
@@ -294,7 +294,7 @@ ShaderLib['line'] = {
 			#else
 				float a = vUv.x;
 				float b = vUv.y;
-				
+
 				float len2 = a * a + b * b;
 
 				#ifdef USE_ALPHA_TO_COVERAGE
@@ -318,17 +318,17 @@ ShaderLib['line'] = {
 			#include <fog_fragment>
 			#include <premultiplied_alpha_fragment>
 		}
-		`
+		`,
 };
 class LineMaterial extends ShaderMaterial {
   constructor(parameters) {
     super({
-      uniforms: UniformsUtils.clone(ShaderLib['line'].uniforms),
-      vertexShader: ShaderLib['line'].vertexShader,
-      fragmentShader: ShaderLib['line'].fragmentShader,
-      clipping: true // required for clipping support
+      uniforms: UniformsUtils.clone(ShaderLib["line"].uniforms),
+      vertexShader: ShaderLib["line"].vertexShader,
+      fragmentShader: ShaderLib["line"].fragmentShader,
+      clipping: true, // required for clipping support
     });
-    this.type = 'LineMaterial'
+    this.type = "LineMaterial";
     this.isLineMaterial = true;
     this.setValues(parameters);
   }
@@ -339,41 +339,41 @@ class LineMaterial extends ShaderMaterial {
     this.uniforms.diffuse.value = value;
   }
   get varyWidth() {
-    return 'VARY_WIDTH' in this.defines;
+    return "VARY_WIDTH" in this.defines;
   }
   set varyWidth(value) {
     if (value === true) {
-      this.defines.VARY_WIDTH = '';
+      this.defines.VARY_WIDTH = "";
     } else {
       delete this.defines.VARY_WIDTH;
     }
   }
   get linearProjected() {
-    return 'LINEAR_PROJECTION' in this.defines;
+    return "LINEAR_PROJECTION" in this.defines;
   }
   set linearProjected(value) {
     if (value === true) {
-      this.defines.LINEAR_PROJECTION = '';
+      this.defines.LINEAR_PROJECTION = "";
     } else {
       delete this.defines.LINEAR_PROJECTION;
     }
   }
   get polar() {
-    return 'POLAR' in this.defines;
+    return "POLAR" in this.defines;
   }
   set polar(value) {
     if (value === true) {
-      this.defines.POLAR = '';
+      this.defines.POLAR = "";
     } else {
       delete this.defines.POLAR;
     }
   }
   get project2d() {
-    return 'PROJECT2D' in this.defines;
+    return "PROJECT2D" in this.defines;
   }
   set project2d(value) {
     if (value === true) {
-      this.defines.PROJECT2D = '';
+      this.defines.PROJECT2D = "";
     } else {
       delete this.defines.PROJECT2D;
     }
@@ -407,11 +407,11 @@ class LineMaterial extends ShaderMaterial {
     this.uniforms.polarRadiusScale.value = value;
   }
   get textured() {
-    return 'TEXTURED' in this.defines;
+    return "TEXTURED" in this.defines;
   }
   set textured(value) {
     if (value === true) {
-      this.defines.TEXTURED = '';
+      this.defines.TEXTURED = "";
     } else {
       delete this.defines.TEXTURED;
     }
@@ -424,28 +424,28 @@ class LineMaterial extends ShaderMaterial {
     this.uniforms.linewidth.value = value;
   }
   set startProjectionMul(v) {
-    this.uniforms.startProjectionMul.value.copy(v)
+    this.uniforms.startProjectionMul.value.copy(v);
   }
   set startProjectionAdd(v) {
-    this.uniforms.startProjectionAdd.value.copy(v)
+    this.uniforms.startProjectionAdd.value.copy(v);
   }
   set endProjectionMul(v) {
-    this.uniforms.endProjectionMul.value.copy(v)
+    this.uniforms.endProjectionMul.value.copy(v);
   }
   set endProjectionAdd(v) {
-    this.uniforms.endProjectionAdd.value.copy(v)
+    this.uniforms.endProjectionAdd.value.copy(v);
   }
   get startProjectionMul() {
-    return this.uniforms.startProjectionMul
+    return this.uniforms.startProjectionMul;
   }
   get startProjectionAdd() {
-    return this.uniforms.startProjectionAdd
+    return this.uniforms.startProjectionAdd;
   }
   get endProjectionMul() {
-    return this.uniforms.endProjectionMul
+    return this.uniforms.endProjectionMul;
   }
   get endProjectionAdd() {
-    return this.uniforms.endProjectionAdd
+    return this.uniforms.endProjectionAdd;
   }
   get opacity() {
     return this.uniforms.opacity.value;
@@ -482,7 +482,7 @@ class LineMaterial extends ShaderMaterial {
     this.uniforms.resolution.value.copy(value);
   }
   get alphaToCoverage() {
-    return 'USE_ALPHA_TO_COVERAGE' in this.defines;
+    return "USE_ALPHA_TO_COVERAGE" in this.defines;
   }
   set alphaToCoverage(value) {
     if (!this.defines) return;
@@ -490,7 +490,7 @@ class LineMaterial extends ShaderMaterial {
       this.needsUpdate = true;
     }
     if (value === true) {
-      this.defines.USE_ALPHA_TO_COVERAGE = '';
+      this.defines.USE_ALPHA_TO_COVERAGE = "";
       this.extensions.derivatives = true;
     } else {
       delete this.defines.USE_ALPHA_TO_COVERAGE;
@@ -498,6 +498,4 @@ class LineMaterial extends ShaderMaterial {
     }
   }
 }
-export {
-  LineMaterial
-};
+export { LineMaterial };

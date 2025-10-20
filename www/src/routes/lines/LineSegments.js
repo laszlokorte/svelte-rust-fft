@@ -8,14 +8,10 @@ import {
   Mesh,
   Sphere,
   Vector3,
-  Vector4
-} from 'three';
-import {
-  LineSegmentsGeometry
-} from './LineSegmentsGeometry.js';
-import {
-  LineMaterial
-} from './LineMaterial.js';
+  Vector4,
+} from "three";
+import { LineSegmentsGeometry } from "./LineSegmentsGeometry.js";
+import { LineMaterial } from "./LineMaterial.js";
 const _start = new Vector3();
 const _end = new Vector3();
 const _start4 = new Vector4();
@@ -35,7 +31,9 @@ function getWorldSpaceHalfWidth(camera, distance, resolution) {
   // transform into clip space, adjust the x and y values by the pixel width offset, then
   // transform back into world space to get world offset. Note clip space is [-1, 1] so full
   // width does not need to be halved.
-  _clipToWorldVector.set(0, 0, -distance, 1.0).applyMatrix4(camera.projectionMatrix);
+  _clipToWorldVector
+    .set(0, 0, -distance, 1.0)
+    .applyMatrix4(camera.projectionMatrix);
   _clipToWorldVector.multiplyScalar(1.0 / _clipToWorldVector.w);
   _clipToWorldVector.x = _lineWidth / resolution.width;
   _clipToWorldVector.y = _lineWidth / resolution.height;
@@ -167,25 +165,33 @@ function raycastScreenSpace(lineSegments, camera, intersects) {
   }
 }
 class LineSegments extends Mesh {
-  constructor(geometry = new LineSegmentsGeometry(), material = new LineMaterial({
-    color: Math.random() * 0xffffff
-  })) {
+  constructor(
+    geometry = new LineSegmentsGeometry(),
+    material = new LineMaterial({
+      color: Math.random() * 0xffffff,
+    }),
+  ) {
     super(geometry, material);
     this.isLineSegments = true;
-    this.type = 'LineSegments';
+    this.type = "LineSegments";
   }
 
   onBeforeRender(renderer, scene, camera, geometry, material, group) {
-    material.uniforms.instanceCount.value = geometry.instanceCount
+    material.uniforms.instanceCount.value = geometry.instanceCount;
   }
 
   raycast(raycaster, intersects) {
     const worldUnits = this.material.worldUnits;
     const camera = raycaster.camera;
     if (camera === null && !worldUnits) {
-      console.error('LineSegments: "Raycaster.camera" needs to be set in order to raycast against LineSegments while worldUnits is set to false.');
+      console.error(
+        'LineSegments: "Raycaster.camera" needs to be set in order to raycast against LineSegments while worldUnits is set to false.',
+      );
     }
-    const threshold = (raycaster.params.Line2 !== undefined) ? raycaster.params.Line2.threshold || 0 : 0;
+    const threshold =
+      raycaster.params.Line2 !== undefined
+        ? raycaster.params.Line2.threshold || 0
+        : 0;
     _ray = raycaster.ray;
     const matrixWorld = this.matrixWorld;
     const geometry = this.geometry;
@@ -201,8 +207,15 @@ class LineSegments extends Mesh {
     if (worldUnits) {
       sphereMargin = _lineWidth * 0.5;
     } else {
-      const distanceToSphere = Math.max(camera.near, _sphere.distanceToPoint(_ray.origin));
-      sphereMargin = getWorldSpaceHalfWidth(camera, distanceToSphere, material.resolution);
+      const distanceToSphere = Math.max(
+        camera.near,
+        _sphere.distanceToPoint(_ray.origin),
+      );
+      sphereMargin = getWorldSpaceHalfWidth(
+        camera,
+        distanceToSphere,
+        material.resolution,
+      );
     }
     _sphere.radius += sphereMargin;
     if (_ray.intersectsSphere(_sphere) === false) {
@@ -218,8 +231,15 @@ class LineSegments extends Mesh {
     if (worldUnits) {
       boxMargin = _lineWidth * 0.5;
     } else {
-      const distanceToBox = Math.max(camera.near, _box.distanceToPoint(_ray.origin));
-      boxMargin = getWorldSpaceHalfWidth(camera, distanceToBox, material.resolution);
+      const distanceToBox = Math.max(
+        camera.near,
+        _box.distanceToPoint(_ray.origin),
+      );
+      boxMargin = getWorldSpaceHalfWidth(
+        camera,
+        distanceToBox,
+        material.resolution,
+      );
     }
     _box.expandByScalar(boxMargin);
     if (_ray.intersectsBox(_box) === false) {
@@ -232,6 +252,4 @@ class LineSegments extends Mesh {
     }
   }
 }
-export {
-  LineSegments
-};
+export { LineSegments };

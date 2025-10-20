@@ -1,27 +1,13 @@
-#![feature(iter_array_chunks)]
-#![feature(iter_intersperse)]
-
-pub mod convolver;
-pub mod sinc_interp;
-pub mod frft;
-pub mod frft2;
-mod iter;
-mod sinc;
 mod utils;
 
-use crate::convolver::conv_length;
-use crate::convolver::Convolver;
-#[cfg(not(feature = "frft2"))]
-use crate::frft::Frft as FrftImpl;
-#[cfg(feature = "frft2")]
-use crate::frft2::Frft2 as FrftImpl;
-use crate::iter::iter_into_slice;
+use frfft1d::conv::len::conv_length;
+use frfft1d::sinc::Complex;
+use frfft1d::strategy::faster::FastFrft as FrftImpl;
 use rustfft::Fft;
-use rustfft::{num_complex::Complex, FftPlanner};
+use rustfft::FftPlanner;
 use std::sync::Arc;
 use wasm_bindgen::prelude::*;
 
-#[cfg(feature = "wee_alloc")]
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
@@ -32,7 +18,7 @@ pub struct Signal {
     freq: Vec<Complex<f32>>,
     frac: Vec<Complex<f32>>,
 
-    frft: FrftImpl,
+    frft: FrftImpl<f32>,
 }
 
 fn do_fft(fft: &Arc<dyn Fft<f32>>, source: &Vec<Complex<f32>>, target: &mut Vec<Complex<f32>>) {
@@ -120,7 +106,8 @@ impl Signal {
             .unwrap_or(1.0);
 
         for bin in &mut self.freq {
-            *bin = *bin * (1.0-interp) + interp * Complex::new(bin.norm().max(0.0001).ln(), bin.arg());
+            *bin = *bin * (1.0 - interp)
+                + interp * Complex::new(bin.norm().max(0.0001).ln(), bin.arg());
         }
 
         let scale_denom = self
@@ -130,7 +117,6 @@ impl Signal {
             .map(|z| z.norm())
             .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Less))
             .unwrap_or(1.0);
-
 
         let scale = if scale_denom != 0.0 {
             scale_nominator / scale_denom
