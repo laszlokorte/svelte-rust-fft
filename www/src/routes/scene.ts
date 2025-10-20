@@ -9,7 +9,7 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
   const axisLabelTextures = ["Re", "Im", "t", "ω"].map((l) => {
     const ctx = document.createElement("canvas").getContext("2d");
     if (ctx) {
-      const texRes = 64;
+      const texRes = 256;
       ctx.canvas.width = texRes;
       ctx.canvas.height = texRes;
       ctx.translate(texRes / 2, texRes / 2);
@@ -30,7 +30,7 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
   const sideLabelTextures = ["f(t)", "F(ω)", "f(-t)", "F(-ω)"].map((l) => {
     const ctx = document.createElement("canvas").getContext("2d");
     if (ctx) {
-      const texRes = 64;
+      const texRes = 256;
       ctx.canvas.width = texRes;
       ctx.canvas.height = texRes;
       ctx.fillStyle = "black";
@@ -515,7 +515,9 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
     graph.add(curveDots);
 
     const shadow1 = new LineMaterial({
-      color: color & 0b00000000_01110000_01110000_01110000,
+      color:
+        (color & ~0b00000000_11100000_11100000_11100000) |
+        0b00000000_10100000_10100000_10100000,
       linewidth: 1.0, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       alphaToCoverage: false,
@@ -529,7 +531,7 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
     lineMats.push(shadow1);
 
     shadow1.transparent = true;
-    shadow1.opacity = 0.05;
+    shadow1.opacity = 1;
     shadow1.stencilWrite = true;
     shadow1.stencilRef = i;
     shadow1.stencilFunc = THREE.EqualStencilFunc;
@@ -540,7 +542,9 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
     shadow1.endProjectionAdd = new THREE.Vector3(-5, 0, 0);
 
     const shadow2 = new LineMaterial({
-      color: color & 0b00000000_01110000_01110000_01110000,
+      color:
+        (color & ~0b00000000_11100000_11100000_11100000) |
+        0b00000000_10100000_10100000_10100000,
       linewidth: 1.0, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       alphaToCoverage: false,
@@ -558,7 +562,7 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
     shadow2.polarRadiusScale = 0.5;
     shadow2.polarRadiusBase = 2.5;
     shadow2.transparent = true;
-    shadow2.opacity = 0.05;
+    shadow2.opacity = 1;
     shadow2.stencilWrite = true;
     shadow2.stencilRef = i;
     shadow2.stencilFunc = THREE.EqualStencilFunc;
@@ -569,7 +573,9 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
     shadow2.endProjectionAdd = new THREE.Vector3(0, -5 * stretchHeight, 0);
 
     const shadow3 = new LineMaterial({
-      color: color & 0b00000000_01110000_01110000_01110000,
+      color:
+        (color & ~0b00000000_11100000_11100000_11100000) |
+        0b00000000_10100000_10100000_10100000,
       linewidth: 1.0, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       alphaToCoverage: false,
@@ -583,7 +589,7 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
     lineMats.push(shadow3);
 
     shadow3.transparent = true;
-    shadow3.opacity = 0.05;
+    shadow3.opacity = 1;
     shadow3.stencilWrite = true;
     shadow3.stencilRef = i;
     shadow3.stencilFunc = THREE.EqualStencilFunc;
@@ -594,7 +600,9 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
     shadow3.endProjectionAdd = new THREE.Vector3(0, 0, 5);
 
     const shadow4 = new LineMaterial({
-      color: color & 0b00000000_01110000_01110000_01110000,
+      color:
+        (color & ~0b00000000_11100000_11100000_11100000) |
+        0b00000000_10100000_10100000_10100000,
       linewidth: 1.0, // in world units with size attenuation, pixels otherwise
       vertexColors: false,
       alphaToCoverage: false,
@@ -608,7 +616,7 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
     lineMats.push(shadow4);
 
     shadow4.transparent = true;
-    shadow4.opacity = 0.05;
+    shadow4.opacity = 1;
     shadow4.stencilWrite = true;
     shadow4.stencilRef = i;
     shadow4.stencilFunc = THREE.EqualStencilFunc;
@@ -965,7 +973,7 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
   let wasPresenting = false;
   function resizeRendererToDisplaySize(renderer) {
     const canvas = renderer.domElement;
-    const pixelRatio = window.devicePixelRatio;
+    const pixelRatio = window.devicePixelRatio * 2;
     const width = Math.floor(canvas.clientWidth * pixelRatio);
     const height = Math.floor(canvas.clientHeight * pixelRatio);
     const needResize =
