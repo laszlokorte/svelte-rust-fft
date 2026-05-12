@@ -5,6 +5,9 @@
     import { Signal, __wbg_set_wasm } from "fftwasm/fftwasm_bg.js";
     import * as wasm from "fftwasm/fftwasm_bg.wasm";
 
+    // @ts-ignore
+    export let params = {};
+
     __wbg_set_wasm(wasm);
 
     const decimalFormat = new Intl.NumberFormat("en-IN", {
@@ -217,6 +220,7 @@
             scene.setSignal(timeDomain);
             scene.setSpectrum(freqDomain);
             scene.setFractional(fracDomain);
+            scene.setShortTime(timeDomain);
         }
     }
 
@@ -230,6 +234,7 @@
         scene.setSignal(timeDomain);
         scene.setSpectrum(freqDomain);
         scene.setFractional(fracDomain);
+        scene.setShortTime(timeDomain);
     }
 
     function getPathA(cx, r) {

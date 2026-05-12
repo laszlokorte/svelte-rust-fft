@@ -874,10 +874,10 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
       const width = 1 / rows;
 
       return {
-        x: x * tex - tex / 2 - (0.001 / 8) * tex,
-        y: y * tex - tex / 2 - (0.001 / 8) * tex,
-        width: width * tex - 0.001 * tex,
-        height: height * tex - 0.001 * tex,
+        x: x, //* tex - tex / 2 - (0.001 / 8) * tex,
+        y: y, // * tex - tex / 2 - (0.001 / 8) * tex,
+        width: width, // * tex - 0.001 * tex,
+        height: height, // * tex - 0.001 * tex,
       };
     });
 
@@ -893,48 +893,119 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
   const bottomVerts = new Float32Array(
     rects.flatMap((r) => [
       r.x,
-      -3.3,
-      r.y + r.height,
-
-      r.x,
-      -3.3,
-      r.y,
-
-      r.x + r.width,
-      -3.3,
+      0,
       r.y,
 
       r.x,
-      -3.3,
-      r.y + r.height,
-
-      r.x + r.width,
-      -3.3,
+      0,
       r.y,
 
-      r.x + r.width,
-      -3.3,
-      r.y + r.height,
+      r.x,
+      0,
+      r.y,
+
+      r.x,
+      0,
+      r.y,
+
+      r.x,
+      0,
+      r.y,
+
+      r.x,
+      0,
+      r.y,
+    ]),
+  );
+  const bottomVertSizes = new Float32Array(
+    rects.flatMap((r) => [
+      0,
+      r.height,
+
+      0,
+      0,
+
+      r.width,
+      0,
+
+      0,
+      r.height,
+
+      r.width,
+      0,
+
+      r.width,
+      r.height,
+    ]),
+  );
+
+  const brightness = new Float32Array(
+    rects.flatMap((r) => [
+      1,
+
+      1,
+
+      1,
+
+      0,
+
+      0,
+
+      0,
     ]),
   );
 
   bottomGeo.setAttribute("position", new THREE.BufferAttribute(bottomVerts, 3));
+  bottomGeo.setAttribute("size", new THREE.BufferAttribute(bottomVertSizes, 2));
+  bottomGeo.setAttribute(
+    "brightness",
+    new THREE.BufferAttribute(brightness, 1),
+  );
   bottomGeo.setDrawRange(0, size * 6);
 
   // 2. Material
   const bottomMat = new THREE.ShaderMaterial({
+    uniforms: {
+      texSize: { value: new THREE.Vector3(0, 0, 0) },
+      texOffset: { value: new THREE.Vector3(0, 0, 0) },
+      tint: { value: new THREE.Vector4(0, 0, 0, 0) },
+      gap: { value: 0.0 },
+      ampl: { value: 0.0 },
+    },
     vertexShader: `
+    attribute vec2 size;
+      uniform float gap;
+      uniform float ampl;
+      attribute float brightness;
+      uniform vec3 texSize;
+      uniform vec3 texOffset;
+      varying float light;
       void main() {
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        light = brightness;
+        vec3 texPos = (position + vec3(size.x - gap * sign(size.x), ampl * brightness, size.y -  gap * sign(size.y))) * texSize + texOffset;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(texPos, 1.0);
       }
     `,
     fragmentShader: `
+
+    varying float light;
+
+    uniform vec4 tint;
       void main() {
-        gl_FragColor = vec4(0.55, 0.6, 0.6, 1.0);
+        gl_FragColor = mix(tint, vec4(1.0,1.0,1.0,1.0), light);
       }
     `,
   });
 
+  bottomMat.uniforms.texSize.value = new THREE.Vector3(tex, 1, tex);
+  bottomMat.uniforms.texOffset.value = new THREE.Vector3(
+    -tex / 2,
+    -3.3,
+    -tex / 2,
+  );
+  bottomMat.uniforms.tint.value = new THREE.Vector4(0.55, 0.6, 0.6, 1.0);
+  bottomMat.uniforms.gap.value = 0.001;
+  bottomMat.uniforms.ampl.value = 0.0;
   bottomMat.side = THREE.FrontSide;
 
   // 3. Mesh
@@ -1104,6 +1175,39 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
     },
     setFractional(sig) {
       curveGeoTop.setPositions(sig);
+    },
+
+    setShortTime(sig) {
+      const freqs = rects.flatMap((r, ri) => [
+        Math.hypot(
+          sig[((r.y + r.x) % 1) * sig.length],
+          sig[((r.y + r.x) % 1) * sig.length + 1],
+        ) * 10,
+        Math.hypot(
+          sig[((r.y + r.x) % 1) * sig.length],
+          sig[((r.y + r.x) % 1) * sig.length + 1],
+        ) * 10,
+        Math.hypot(
+          sig[((r.y + r.x) % 1) * sig.length],
+          sig[((r.y + r.x) % 1) * sig.length + 1],
+        ) * 10,
+        Math.hypot(
+          sig[((r.y + r.x) % 1) * sig.length],
+          sig[((r.y + r.x) % 1) * sig.length + 1],
+        ) * 10,
+        Math.hypot(
+          sig[((r.y + r.x) % 1) * sig.length],
+          sig[((r.y + r.x) % 1) * sig.length + 1],
+        ) * 10,
+        Math.hypot(
+          sig[((r.y + r.x) % 1) * sig.length],
+          sig[((r.y + r.x) % 1) * sig.length + 1],
+        ) * 10,
+      ]);
+      bottomGeo.setAttribute(
+        "brightness",
+        new THREE.BufferAttribute(new Float32Array(freqs), 1),
+      );
     },
     onRotationChange(sub) {
       rotationSubscriber = sub;
