@@ -1,5 +1,4 @@
 <script>
-    export let params;
 </script>
 
 <h2>Fourier Transform Cube</h2>
@@ -56,8 +55,8 @@
     functions need to be summed together to trconstruct the signal
     <code>f(t)</code>. <code>sin</code> is an odd function and <code>cos</code> is
     an even function. The sum of only odd functions is itself an odd function. The
-    sum of only even functions is an even function. To construct any signal that
-    is neither even nor odd sin and cos components need to be mixed.
+    sum of only even functions is an even function. To construct any signal that is
+    neither even nor odd sin and cos components need to be mixed.
 </p>
 
 <p>

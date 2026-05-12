@@ -61,8 +61,6 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
   boxGeoX.addGroup(0, 6, 0);
   boxGeoX.addGroup(6, Infinity, 1);
 
-  const boxGeo = new THREE.BoxGeometry();
-  const labelGeo = new THREE.PlaneGeometry(0.3, 0.3);
   const light = new THREE.AmbientLight("white", 4);
 
   const stretchHeight = 1 / 1.618;
@@ -190,6 +188,7 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
   let labels = [];
   let sides = new THREE.Group();
   let root = new THREE.Group();
+
   scene.add(root);
 
   let i = 1;
@@ -857,6 +856,93 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
     root.rotation.set(0, 0, 0);
     root.scale.set(1, 1, 1);
   });
+  const bottomGeo = new THREE.BufferGeometry();
+
+  const sizelog = 8;
+  const size = Math.pow(2, sizelog);
+  const tex = 10;
+
+  const rects = Array(size * (sizelog + 1))
+    .fill(0)
+    .map((_, i) => {
+      const rows = Math.pow(2, Math.floor(i / size));
+      const cols = size / rows;
+      const x = ((i % size) % rows) / rows;
+      const y = Math.floor((i % size) / rows) / cols;
+
+      const height = 1 / cols;
+      const width = 1 / rows;
+
+      return {
+        x: x * tex - tex / 2 - (0.001 / 8) * tex,
+        y: y * tex - tex / 2 - (0.001 / 8) * tex,
+        width: width * tex - 0.001 * tex,
+        height: height * tex - 0.001 * tex,
+      };
+    });
+
+  const wavelets = Array(size)
+    .fill(null)
+    .map((_, i) => {
+      const f = Math.floor(Math.log2(i + 1)) + 1;
+      const ff = i - Math.pow(2, f);
+
+      return f * size + i + 1 - size;
+    });
+
+  const bottomVerts = new Float32Array(
+    rects.flatMap((r) => [
+      r.x,
+      -3.3,
+      r.y + r.height,
+
+      r.x,
+      -3.3,
+      r.y,
+
+      r.x + r.width,
+      -3.3,
+      r.y,
+
+      r.x,
+      -3.3,
+      r.y + r.height,
+
+      r.x + r.width,
+      -3.3,
+      r.y,
+
+      r.x + r.width,
+      -3.3,
+      r.y + r.height,
+    ]),
+  );
+
+  bottomGeo.setAttribute("position", new THREE.BufferAttribute(bottomVerts, 3));
+  bottomGeo.setDrawRange(0, size * 6);
+
+  // 2. Material
+  const bottomMat = new THREE.ShaderMaterial({
+    vertexShader: `
+      void main() {
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      void main() {
+        gl_FragColor = vec4(0.55, 0.6, 0.6, 1.0);
+      }
+    `,
+  });
+
+  bottomMat.side = THREE.FrontSide;
+
+  // 3. Mesh
+  const bottomMesh = new THREE.Mesh(bottomGeo, bottomMat);
+
+  bottomMesh.renderOrder = 5;
+
+  scene.add(bottomMesh);
 
   const animate = () => {
     if (resizeRendererToDisplaySize(renderer)) {
@@ -998,6 +1084,14 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
     dispose: () => {
       document.body.removeChild(vrButton);
       renderer.dispose();
+    },
+    setShortTimeRatio(ratio) {
+      bottomGeo.setDrawRange(
+        size *
+          6 *
+          (((Math.abs(ratio) % (sizelog + 1)) + (sizelog + 1)) % (sizelog + 1)),
+        size * 6,
+      );
     },
     setFractionalRotation(frac) {
       axees[4].rotation.y = frac;

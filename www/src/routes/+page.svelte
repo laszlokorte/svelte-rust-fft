@@ -20,17 +20,18 @@
         maximumFractionDigits: 0,
         signDisplay: "exceptZero",
     });
-    const samples = 512;
+    const samples = 1024;
     const signal = Signal.new(samples);
     const customRecording = new Float32Array(2 * signal.get_len());
 
     const maxFreq = samples / 2;
-    export let params;
     let el;
     let camFrame;
     let scene = null;
     let snap = false;
     let fraction = 0;
+    let shortTimeRatio = 0;
+    let syncRotStft = true;
     let cepstrum = 0;
     let freq = 0;
     let phase = 0;
@@ -188,10 +189,11 @@
             }
         }
 
-        signal.update_freq_with_cepstrum(cepstrum);
+        signal.update_freq(cepstrum);
         signal.update_frac(fraction);
 
         scene.setFractionalRotation((fraction * Math.PI) / 2);
+        scene.setShortTimeRatio(shortTimeRatio);
     }
 
     $: {
@@ -273,6 +275,10 @@
                 } else {
                     fraction = r - 2;
                 }
+            }
+            if (syncRotStft) {
+                shortTimeRatio =
+                    (Math.round(8 * r * Math.sign(r) + 8) % 16) - 8;
             }
         });
     }
@@ -479,7 +485,7 @@
                         type="range"
                         min="-4"
                         max="4"
-                        step="0.01"
+                        step="0.001"
                         bind:value={fraction}
                         id="control_fraction"
                     /></label
@@ -487,6 +493,34 @@
 
                 <label
                     ><input type="checkbox" bind:checked={syncRot} /> Sync to cam</label
+                >
+                <hr />
+
+                <label for="control_stft">
+                    <span
+                        style:display="flex"
+                        style:gap="0.2em"
+                        style:white-space="nowrap"
+                        >Short-Time DFT: <output
+                            >{decimalFormatSigned.format(
+                                shortTimeRatio,
+                            )}</output
+                        ></span
+                    >
+                    <input
+                        disabled={syncRotStft}
+                        type="range"
+                        min="-8"
+                        max="8"
+                        step="1"
+                        bind:value={shortTimeRatio}
+                        id="control_stft"
+                    /></label
+                >
+
+                <label
+                    ><input type="checkbox" bind:checked={syncRotStft} /> Sync to
+                    cam</label
                 >
                 <hr />
 
