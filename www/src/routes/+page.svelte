@@ -195,12 +195,13 @@
                 timeDomain[2 * i + 1] = customRecording[2 * i + 1];
             }
         }
-        signal.update_freq();
-        signal.update_stft();
+
+        signal.update_frac(fraction);
     }
 
     $: if (scene) {
-        signal.update_frac(fraction);
+        signal.update_freq();
+        signal.update_stft();
     }
     $: if (scene) {
         scene.setFractionalRotation((fraction * Math.PI) / 2);
