@@ -286,6 +286,7 @@
     );
 
     $: if (scene) {
+        console.log("x");
         scene.onRotationChange(function (r) {
             if (syncRot) {
                 const delta = Math.abs(Math.round(r) - r);
@@ -294,6 +295,8 @@
                 } else {
                     fraction = r - 2;
                 }
+
+                scene.setFractionalRotation((fraction * Math.PI) / 2);
             }
             if (syncRotStft) {
                 shortTimeRatio =
