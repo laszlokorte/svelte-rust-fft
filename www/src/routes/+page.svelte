@@ -21,7 +21,7 @@
         maximumFractionDigits: 0,
         signDisplay: "exceptZero",
     });
-    const samples_log = 10;
+    const samples_log = 8;
     const samples = 1 << samples_log;
     const signal = Signal.new(samples_log);
     const customRecording = new Float32Array(2 * signal.get_len());
@@ -197,12 +197,10 @@
         }
 
         signal.update_frac(fraction);
-    }
-
-    $: if (scene) {
         signal.update_freq();
         signal.update_stft();
     }
+
     $: if (scene) {
         scene.setFractionalRotation((fraction * Math.PI) / 2);
         scene.setShortTimeRatio(shortTimeRatio);
@@ -286,11 +284,11 @@
     );
 
     onMount(() => {
-        scene = createScene(el, camFrame);
+        scene = createScene(el, camFrame, samples_log);
         scene.onRotationChange(function (r) {
             if (syncRot) {
                 const delta = Math.abs(Math.round(r) - r);
-                if (delta < 0.02) {
+                if (delta < 0.005) {
                     fraction = Math.round(r) - 2;
                 } else {
                     fraction = r - 2;
@@ -300,7 +298,9 @@
             }
             if (syncRotStft) {
                 shortTimeRatio =
-                    (Math.round(8 * r * Math.sign(r) + 8) % 16) - 8;
+                    (Math.round(samples_log * r * Math.sign(r) + samples_log) %
+                        (2 * samples_log)) -
+                    samples_log;
             }
         });
 
@@ -528,8 +528,8 @@
                     <input
                         disabled={syncRotStft}
                         type="range"
-                        min="-8"
-                        max="8"
+                        min={-samples_log}
+                        max={samples_log}
                         step="1"
                         bind:value={shortTimeRatio}
                         id="control_stft"

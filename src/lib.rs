@@ -5,6 +5,7 @@ use frfft1d::sinc::Complex;
 use frfft1d::strategy::faster::FastFrft as FrftImpl;
 use rustfft::Fft;
 use rustfft::FftPlanner;
+use std::f32::consts::PI;
 use std::sync::Arc;
 use wasm_bindgen::prelude::*;
 
@@ -18,6 +19,7 @@ pub struct Signal {
     freq: Vec<Complex<f32>>,
     frac: Vec<Complex<f32>>,
     stft: Vec<Complex<f32>>,
+    stft_bank: Vec<Arc<dyn Fft<f32>>>,
 
     frft: FrftImpl<f32>,
 }
@@ -51,6 +53,60 @@ fn do_fft(fft: &Arc<dyn Fft<f32>>, source: &Vec<Complex<f32>>, target: &mut Vec<
     }
 }
 
+fn ifftshift<T>(data: &mut [T]) {
+    let n = data.len();
+    let k = n / 2;
+    data.rotate_right(k);
+}
+fn fftshift<T>(data: &mut [T]) {
+    let n = data.len();
+    let k = n / 2;
+    data.rotate_left(k);
+}
+pub fn chunked_ifftshift(data: &mut [Complex<f32>], k: usize) {
+    let chunk_size = 1usize << k;
+
+    assert!(data.len() % chunk_size == 0);
+
+    for chunk in data.chunks_exact_mut(chunk_size) {
+        ifftshift(chunk);
+    }
+}
+pub fn chunked_fftshift(data: &mut [Complex<f32>], k: usize) {
+    let chunk_size = 1usize << k;
+
+    assert!(data.len() % chunk_size == 0);
+
+    for chunk in data.chunks_exact_mut(chunk_size) {
+        fftshift(chunk);
+    }
+}
+
+fn apply_hann_chunks(data: &mut [Complex<f32>], k: usize) {
+    let n = 1usize << k;
+
+    assert!(data.len() % n == 0);
+
+    match n {
+        0 => unreachable!(),
+        1 => return,
+        2 => {
+            // optional: either no-op or zero everything
+            return;
+        }
+        _ => {}
+    }
+    let denom = n as f32 - 1.0;
+
+    for chunk in data.chunks_exact_mut(n) {
+        for (i, x) in chunk.iter_mut().enumerate() {
+            let w = 0.5 * (1.0 - (2.0 * PI * i as f32 / denom).cos());
+
+            *x *= w;
+        }
+    }
+}
+
 #[wasm_bindgen]
 impl Signal {
     pub fn new(log_length: usize) -> Self {
@@ -62,14 +118,18 @@ impl Signal {
 
         let mut planner = FftPlanner::new();
         let fft_integer = planner.plan_fft_forward(length);
+        let stft_bank = (0..=log_length)
+            .map(|b| planner.plan_fft_forward(1 << b))
+            .collect();
 
         let time = vec![Complex::default(); length];
         let freq = vec![Complex::default(); length];
         let frac = vec![Complex::default(); length];
-        let stft = vec![Complex::default(); length * log_length];
+        let stft = vec![Complex::default(); length * (log_length + 1)];
 
         Self {
             fft_integer,
+            stft_bank,
             frft: FrftImpl::new(length),
             time,
             freq,
@@ -108,9 +168,29 @@ impl Signal {
 
     pub fn update_stft(&mut self) {
         let len = self.time.len();
+
         let mut bin = 0;
-        while 1 << bin < len {
-            self.stft[(bin * len)..(len * (bin + 1))].copy_from_slice(&self.time);
+        while (1usize << bin) <= len {
+            let chunk_size = 1usize << bin;
+
+            let base = bin * len;
+            let slice = &mut self.stft[base..base + len];
+
+            slice.copy_from_slice(&self.time);
+
+            if let Some(bank) = self.stft_bank.get(bin) {
+                chunked_fftshift(slice, bin);
+
+                bank.process(slice);
+
+                chunked_ifftshift(slice, bin);
+
+                let norm = 1.0 / (chunk_size as f32).sqrt();
+                for x in slice {
+                    *x *= norm;
+                }
+            }
+
             bin += 1;
         }
     }

@@ -9,4 +9,7 @@ export default defineConfig({
   ssr: {
     noExternal: ["three"],
   },
+  build: {
+    target: "esnext",
+  },
 });

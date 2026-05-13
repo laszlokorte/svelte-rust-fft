@@ -5,7 +5,11 @@ import { LineMaterial } from "./lines/LineMaterial.js";
 import { LineSegmentsGeometry } from "./lines/LineSegmentsGeometry.js";
 import { VRButton } from "three/addons/webxr/VRButton.js";
 
-export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
+export const createScene = (
+  el: HTMLCanvasElement,
+  camFrame: HTMLElement,
+  sizelog,
+) => {
   const axisLabelTextures = ["Re", "Im", "t", "ω"].map((l) => {
     const ctx = document.createElement("canvas").getContext("2d");
     if (ctx) {
@@ -858,22 +862,29 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
   });
   const bottomGeo = new THREE.BufferGeometry();
 
-  const sizelog = 8;
-  const size = Math.pow(2, sizelog);
+  const size = 1 << sizelog;
   const tex = 10;
 
   const rects = Array(size * (sizelog + 1))
     .fill(0)
     .map((_, i) => {
+      const offset = size * Math.floor(i / size);
       const rows = Math.pow(2, Math.floor(i / size));
       const cols = size / rows;
       const x = ((i % size) % rows) / rows;
       const y = Math.floor((i % size) / rows) / cols;
 
+      const t = (i % size) % rows;
+      const f = Math.floor((i % size) / rows);
+
       const height = 1 / cols;
       const width = 1 / rows;
 
       return {
+        t,
+        offset,
+        stride: rows,
+        f,
         x: x, //* tex - tex / 2 - (0.001 / 8) * tex,
         y: y, // * tex - tex / 2 - (0.001 / 8) * tex,
         width: width, // * tex - 0.001 * tex,
@@ -940,19 +951,7 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
   );
 
   const brightness = new Float32Array(
-    rects.flatMap((r) => [
-      1,
-
-      1,
-
-      1,
-
-      0,
-
-      0,
-
-      0,
-    ]),
+    rects.flatMap((r) => Array(6 * 2).fill(0)),
   );
 
   bottomGeo.setAttribute("position", new THREE.BufferAttribute(bottomVerts, 3));
@@ -976,35 +975,55 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
     attribute vec2 size;
       uniform float gap;
       uniform float ampl;
-      attribute float brightness;
+      attribute vec2 brightness;
       uniform vec3 texSize;
       uniform vec3 texOffset;
-      varying float light;
+      varying vec2 light;
       void main() {
         light = brightness;
-        vec3 texPos = (position + vec3(size.x - gap * sign(size.x), ampl * brightness, size.y -  gap * sign(size.y))) * texSize + texOffset;
+        vec3 texPos = (position + vec3(size.x + gap/2.0 - gap * sign(size.x), ampl * brightness.x, size.y + gap / 2.0 -  gap * sign(size.y))) * texSize + texOffset;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(texPos, 1.0);
       }
     `,
     fragmentShader: `
 
-    varying float light;
+    varying vec2 light;
 
     uniform vec4 tint;
+    #define PI 3.141
+
+    vec3 hsv2rgb(vec3 c) {
+        vec3 rgb = clamp(
+            abs(mod(c.x * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0,
+            0.0,
+            1.0
+        );
+
+        return c.z * mix(vec3(1.0), rgb, c.y);
+    }
+
+    vec3 angleToRgb(float angle) {
+        // radians -> hue in [0,1)
+        float h = fract(angle / (2.0 * PI));
+
+        // full saturation + value
+        return hsv2rgb(vec3(h, 1.0, 1.0));
+    }
+
       void main() {
-        gl_FragColor = mix(tint, vec4(1.0,1.0,1.0,1.0), light);
+        gl_FragColor = mix(tint, vec4(angleToRgb(light.y),1.0), light.x);
       }
     `,
   });
 
-  bottomMat.uniforms.texSize.value = new THREE.Vector3(tex, 1, tex);
+  bottomMat.uniforms.texSize.value = new THREE.Vector3(-tex, 1, -tex);
   bottomMat.uniforms.texOffset.value = new THREE.Vector3(
-    -tex / 2,
-    -3.3,
-    -tex / 2,
+    tex / 2,
+    -0.11,
+    tex / 2,
   );
-  bottomMat.uniforms.tint.value = new THREE.Vector4(0.55, 0.6, 0.6, 1.0);
-  bottomMat.uniforms.gap.value = 0.001;
+  bottomMat.uniforms.tint.value = new THREE.Vector4(0.35, 0.35, 0.35, 1.0);
+  bottomMat.uniforms.gap.value = 0.0004; //0.0004;
   bottomMat.uniforms.ampl.value = 0.0;
   bottomMat.side = THREE.FrontSide;
 
@@ -1013,7 +1032,7 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
 
   bottomMesh.renderOrder = 5;
 
-  scene.add(bottomMesh);
+  socket.add(bottomMesh);
 
   const animate = () => {
     if (resizeRendererToDisplaySize(renderer)) {
@@ -1178,17 +1197,25 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
     },
 
     setShortTime(sig) {
-      const freqs = rects.flatMap((r, ri) => [
-        Math.hypot(sig[ri * 2], sig[ri * 2 + 1]) * 10,
-        Math.hypot(sig[ri * 2], sig[ri * 2 + 1]) * 10,
-        Math.hypot(sig[ri * 2], sig[ri * 2 + 1]) * 10,
-        Math.hypot(sig[ri * 2], sig[ri * 2 + 1]) * 10,
-        Math.hypot(sig[ri * 2], sig[ri * 2 + 1]) * 10,
-        Math.hypot(sig[ri * 2], sig[ri * 2 + 1]) * 10,
-      ]);
       bottomGeo.setAttribute(
         "brightness",
-        new THREE.BufferAttribute(new Float32Array(freqs), 1),
+        new THREE.BufferAttribute(
+          new Float32Array(
+            rects.flatMap((r, ri) => {
+              const m = Math.hypot(
+                sig[(r.offset + r.t + r.stride * r.f) * 2],
+                sig[(r.offset + r.t + r.stride * r.f) * 2 + 1],
+              );
+              const p = Math.atan2(
+                sig[(r.offset + r.t + r.stride * r.f) * 2 + 1],
+                sig[(r.offset + r.t + r.stride * r.f) * 2],
+              );
+
+              return [m, p, m, p, m, p, m, p, m, p, m, p];
+            }),
+          ),
+          2,
+        ),
       );
     },
     onRotationChange(sub) {
