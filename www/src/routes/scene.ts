@@ -1179,30 +1179,12 @@ export const createScene = (el: HTMLCanvasElement, camFrame: HTMLElement) => {
 
     setShortTime(sig) {
       const freqs = rects.flatMap((r, ri) => [
-        Math.hypot(
-          sig[((r.y + r.x) % 1) * sig.length],
-          sig[((r.y + r.x) % 1) * sig.length + 1],
-        ) * 10,
-        Math.hypot(
-          sig[((r.y + r.x) % 1) * sig.length],
-          sig[((r.y + r.x) % 1) * sig.length + 1],
-        ) * 10,
-        Math.hypot(
-          sig[((r.y + r.x) % 1) * sig.length],
-          sig[((r.y + r.x) % 1) * sig.length + 1],
-        ) * 10,
-        Math.hypot(
-          sig[((r.y + r.x) % 1) * sig.length],
-          sig[((r.y + r.x) % 1) * sig.length + 1],
-        ) * 10,
-        Math.hypot(
-          sig[((r.y + r.x) % 1) * sig.length],
-          sig[((r.y + r.x) % 1) * sig.length + 1],
-        ) * 10,
-        Math.hypot(
-          sig[((r.y + r.x) % 1) * sig.length],
-          sig[((r.y + r.x) % 1) * sig.length + 1],
-        ) * 10,
+        Math.hypot(sig[ri * 2], sig[ri * 2 + 1]) * 10,
+        Math.hypot(sig[ri * 2], sig[ri * 2 + 1]) * 10,
+        Math.hypot(sig[ri * 2], sig[ri * 2 + 1]) * 10,
+        Math.hypot(sig[ri * 2], sig[ri * 2 + 1]) * 10,
+        Math.hypot(sig[ri * 2], sig[ri * 2 + 1]) * 10,
+        Math.hypot(sig[ri * 2], sig[ri * 2 + 1]) * 10,
       ]);
       bottomGeo.setAttribute(
         "brightness",

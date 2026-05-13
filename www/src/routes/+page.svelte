@@ -5,12 +5,10 @@
     import { Signal, __wbg_set_wasm } from "fftwasm/fftwasm_bg.js";
     import * as wasm from "fftwasm/fftwasm_bg.wasm";
 
-    // @ts-ignore
     export let params = {};
-
     __wbg_set_wasm(wasm);
 
-    const decimalFormat = new Intl.NumberFormat("en-IN", {
+    const decimalFormat = new Intl.NumberFormat("en-in", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
     });
@@ -23,8 +21,9 @@
         maximumFractionDigits: 0,
         signDisplay: "exceptZero",
     });
-    const samples = 1024;
-    const signal = Signal.new(samples);
+    const samples_log = 10;
+    const samples = 1 << samples_log;
+    const signal = Signal.new(samples_log);
     const customRecording = new Float32Array(2 * signal.get_len());
 
     const maxFreq = samples / 2;
@@ -60,6 +59,11 @@
         wasm.memory.buffer,
         signal.get_frac(),
         2 * signal.get_len(),
+    );
+    let stftDomain = new Float32Array(
+        wasm.memory.buffer,
+        signal.get_stft(),
+        2 * signal.get_stft_len(),
     );
 
     function sinc(x) {
@@ -191,10 +195,14 @@
                 timeDomain[2 * i + 1] = customRecording[2 * i + 1];
             }
         }
+        signal.update_freq();
+        signal.update_stft();
+    }
 
-        signal.update_freq(cepstrum);
+    $: if (scene) {
         signal.update_frac(fraction);
-
+    }
+    $: if (scene) {
         scene.setFractionalRotation((fraction * Math.PI) / 2);
         scene.setShortTimeRatio(shortTimeRatio);
     }
@@ -216,11 +224,16 @@
                 signal.get_frac(),
                 2 * signal.get_len(),
             );
+            stftDomain = new Float32Array(
+                wasm.memory.buffer,
+                signal.get_stft(),
+                2 * signal.get_stft_len(),
+            );
 
             scene.setSignal(timeDomain);
             scene.setSpectrum(freqDomain);
             scene.setFractional(fracDomain);
-            scene.setShortTime(timeDomain);
+            scene.setShortTime(stftDomain);
         }
     }
 
@@ -234,7 +247,7 @@
         scene.setSignal(timeDomain);
         scene.setSpectrum(freqDomain);
         scene.setFractional(fracDomain);
-        scene.setShortTime(timeDomain);
+        scene.setShortTime(stftDomain);
     }
 
     function getPathA(cx, r) {

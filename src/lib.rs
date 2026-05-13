@@ -17,6 +17,7 @@ pub struct Signal {
     time: Vec<Complex<f32>>,
     freq: Vec<Complex<f32>>,
     frac: Vec<Complex<f32>>,
+    stft: Vec<Complex<f32>>,
 
     frft: FrftImpl<f32>,
 }
@@ -52,9 +53,10 @@ fn do_fft(fft: &Arc<dyn Fft<f32>>, source: &Vec<Complex<f32>>, target: &mut Vec<
 
 #[wasm_bindgen]
 impl Signal {
-    pub fn new(length: usize) -> Self {
+    pub fn new(log_length: usize) -> Self {
         utils::set_panic_hook();
 
+        let length = 1 << log_length;
         let sinc_len = 2 * length - 1;
         let _fft_conv_len = conv_length(length, sinc_len);
 
@@ -64,12 +66,14 @@ impl Signal {
         let time = vec![Complex::default(); length];
         let freq = vec![Complex::default(); length];
         let frac = vec![Complex::default(); length];
+        let stft = vec![Complex::default(); length * log_length];
 
         Self {
             fft_integer,
             frft: FrftImpl::new(length),
             time,
             freq,
+            stft,
             frac,
         }
     }
@@ -86,12 +90,29 @@ impl Signal {
         self.frac.as_ptr()
     }
 
+    pub fn get_stft(&self) -> *const Complex<f32> {
+        self.stft.as_ptr()
+    }
+
     pub fn get_len(&self) -> usize {
         self.time.len()
     }
 
+    pub fn get_stft_len(&self) -> usize {
+        self.stft.len()
+    }
+
     pub fn update_freq(&mut self) {
         do_fft(&self.fft_integer, &self.time, &mut self.freq);
+    }
+
+    pub fn update_stft(&mut self) {
+        let len = self.time.len();
+        let mut bin = 0;
+        while 1 << bin < len {
+            self.stft[(bin * len)..(len * (bin + 1))].copy_from_slice(&self.time);
+            bin += 1;
+        }
     }
 
     pub fn update_freq_with_cepstrum(&mut self, interp: f32) {

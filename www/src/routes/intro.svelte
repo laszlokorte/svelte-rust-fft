@@ -1,6 +1,3 @@
-<script>
-</script>
-
 <h2>Fourier Transform Cube</h2>
 
 <p>
