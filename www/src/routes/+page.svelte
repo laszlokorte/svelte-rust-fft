@@ -285,8 +285,8 @@
         (a) => a != 0,
     );
 
-    $: if (scene) {
-        console.log("x");
+    onMount(() => {
+        scene = createScene(el, camFrame);
         scene.onRotationChange(function (r) {
             if (syncRot) {
                 const delta = Math.abs(Math.round(r) - r);
@@ -303,10 +303,6 @@
                     (Math.round(8 * r * Math.sign(r) + 8) % 16) - 8;
             }
         });
-    }
-
-    onMount(() => {
-        scene = createScene(el, camFrame);
 
         return scene.dispose;
     });
