@@ -3,6 +3,7 @@ mod utils;
 use frfft1d::conv::len::conv_length;
 use frfft1d::sinc::Complex;
 use frfft1d::strategy::faster::FastFrft as FrftImpl;
+use rustfft::num_complex::ComplexFloat;
 use rustfft::Fft;
 use rustfft::FftPlanner;
 use std::f32::consts::PI;
@@ -179,15 +180,18 @@ impl Signal {
             slice.copy_from_slice(&self.time);
 
             if let Some(bank) = self.stft_bank.get(bin) {
+                apply_hann_chunks(slice, bin);
                 chunked_fftshift(slice, bin);
 
                 bank.process(slice);
 
                 chunked_ifftshift(slice, bin);
 
-                let norm = 1.0 / (chunk_size as f32).sqrt();
-                for x in slice {
-                    *x *= norm;
+                let norm = slice.iter().map(|z| z.abs()).fold(f32::NAN, f32::max);
+                if norm > 0.0 {
+                    for x in slice {
+                        *x /= norm;
+                    }
                 }
             }
 

@@ -867,7 +867,7 @@ export const createScene = (
 
   const rects = Array(size * (sizelog + 1))
     .fill(0)
-    .map((_, i) => {
+    .flatMap((_, i) => {
       const offset = size * Math.floor(i / size);
       const rows = Math.pow(2, Math.floor(i / size));
       const cols = size / rows;
@@ -879,17 +879,32 @@ export const createScene = (
 
       const height = 1 / cols;
       const width = 1 / rows;
+      const xEdgeStart = t == 0;
+      const xEdgeEnd = t == cols - 1;
+      const yEdgeStart = f == 0;
+      const yEdgeEnd = f == rows - 1;
 
-      return {
-        t,
-        offset,
-        stride: rows,
-        f,
-        x: x, //* tex - tex / 2 - (0.001 / 8) * tex,
-        y: y, // * tex - tex / 2 - (0.001 / 8) * tex,
-        width: width, // * tex - 0.001 * tex,
-        height: height, // * tex - 0.001 * tex,
-      };
+      return [
+        {
+          t,
+          offset,
+          stride: rows,
+          f,
+          w:
+            (xEdgeStart && !xEdgeEnd ? 0.002 : 0) +
+            (yEdgeStart && !yEdgeEnd ? 0.005 : 0),
+          x:
+            xEdgeStart && !xEdgeEnd
+              ? 0
+              : x - (!xEdgeEnd || !xEdgeStart ? width / 2 : 0), //* tex - tex / 2 - (0.001 / 8) * tex,
+          y:
+            yEdgeStart && !yEdgeEnd
+              ? 0
+              : y - (!yEdgeEnd || !yEdgeStart ? height / 2 : 0), // * tex - tex / 2 - (0.001 / 8) * tex,
+          width: xEdgeStart && !xEdgeEnd ? 1 : width, // * tex - 0.001 * tex,
+          height: yEdgeStart && !yEdgeEnd ? 1 : height, // * tex - 0.001 * tex,
+        },
+      ];
     });
 
   const wavelets = Array(size)
@@ -904,27 +919,27 @@ export const createScene = (
   const bottomVerts = new Float32Array(
     rects.flatMap((r) => [
       r.x,
-      0,
+      r.w,
       r.y,
 
       r.x,
-      0,
+      r.w,
       r.y,
 
       r.x,
-      0,
+      r.w,
       r.y,
 
       r.x,
-      0,
+      r.w,
       r.y,
 
       r.x,
-      0,
+      r.w,
       r.y,
 
       r.x,
-      0,
+      r.w,
       r.y,
     ]),
   );
@@ -1023,7 +1038,7 @@ export const createScene = (
     tex / 2,
   );
   bottomMat.uniforms.tint.value = new THREE.Vector4(0.35, 0.35, 0.35, 1.0);
-  bottomMat.uniforms.gap.value = 0.0004; //0.0004;
+  bottomMat.uniforms.gap.value = 0.0; //0.0004;
   bottomMat.uniforms.ampl.value = 0.0;
   bottomMat.side = THREE.FrontSide;
 

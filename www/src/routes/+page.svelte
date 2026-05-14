@@ -21,7 +21,7 @@
         maximumFractionDigits: 0,
         signDisplay: "exceptZero",
     });
-    const samples_log = 8;
+    const samples_log = 10;
     const samples = 1 << samples_log;
     const signal = Signal.new(samples_log);
     const customRecording = new Float32Array(2 * signal.get_len());
