@@ -103,6 +103,71 @@
         customRecording[0] = 0;
     }
     recordClear();
+    let audioCtx;
+    let analyser;
+    let source;
+    let stream;
+    let animationId;
+    let isRecording = false;
+
+    async function toggleRecord() {
+        if (isRecording) {
+            await stopRecord();
+        } else {
+            await startRecord();
+        }
+    }
+
+    async function startRecord() {
+        stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+        });
+
+        audioCtx = new AudioContext();
+
+        source = audioCtx.createMediaStreamSource(stream);
+
+        analyser = audioCtx.createAnalyser();
+
+        // gives 1024 waveform samples
+        analyser.fftSize = samples * 2;
+        analyser.smoothingTimeConstant = 0;
+
+        source.connect(analyser);
+
+        isRecording = true;
+        sampleRecording();
+    }
+    async function stopRecord() {
+        cancelAnimationFrame(animationId);
+
+        if (stream) {
+            for (const track of stream.getTracks()) {
+                track.stop();
+            }
+        }
+
+        if (audioCtx) {
+            await audioCtx.close();
+        }
+
+        isRecording = false;
+    }
+    function sampleRecording() {
+        const sampleBuffer = new Float32Array(analyser.fftSize / 2);
+
+        function frame() {
+            animationId = requestAnimationFrame(frame);
+
+            analyser.getFloatTimeDomainData(sampleBuffer);
+            for (let i = 0; i < samples; i++) {
+                customRecording[2 * i] = sampleBuffer[i];
+                customRecording[2 * i + 1] = 0;
+            }
+        }
+
+        frame();
+    }
 
     function recordDo() {
         r = (r + samples + 1) % samples;
@@ -352,6 +417,12 @@
                             type="button"
                             on:click={recordClear}
                             style="cursor: pointer;">clear</button
+                        >
+                        <button
+                            type="button"
+                            on:click={toggleRecord}
+                            style="cursor: pointer;"
+                            >{isRecording ? "Stop" : "Microphone"}</button
                         >
                     {/if}
                 </span>
@@ -695,7 +766,7 @@
     @media (min-width: 800px) {
         .container {
             grid-template-columns:
-                [canvas-start controls-start] minmax(20em, min-content)
+                [canvas-start controls-start] minmax(22em, min-content)
                 [controls-end cam-start] 10fr [canvas-end cam-end];
             grid-template-rows: [controls-start canvas-start cam-start] 1fr [controls-end canvas-end cam-end];
         }

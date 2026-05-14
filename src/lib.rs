@@ -169,6 +169,7 @@ impl Signal {
 
     pub fn update_stft(&mut self) {
         let len = self.time.len();
+        let denorm = self.time.iter().map(|z| z.abs()).fold(f32::NAN, f32::max);
 
         let mut bin = 0;
         while (1usize << bin) <= len {
@@ -188,9 +189,10 @@ impl Signal {
                 chunked_ifftshift(slice, bin);
 
                 let norm = slice.iter().map(|z| z.abs()).fold(f32::NAN, f32::max);
-                if norm > 0.0 {
+                if norm > 0.0 && f32::is_finite(norm) {
                     for x in slice {
                         *x /= norm;
+                        *x *= denorm;
                     }
                 }
             }
