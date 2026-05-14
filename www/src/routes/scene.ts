@@ -16,6 +16,7 @@ export const createScene = (
       const texRes = 256;
       ctx.canvas.width = texRes;
       ctx.canvas.height = texRes;
+      ctx.canvas.style.display = "none";
       ctx.translate(texRes / 2, texRes / 2);
       ctx.rotate(-Math.PI / 2);
       ctx.translate(0, texRes / 4);
@@ -48,7 +49,6 @@ export const createScene = (
       ctx.fillStyle = "#fff";
       ctx.font = Math.round(texRes * 0.35) + "px monospace";
       ctx.fillText(l, 0, 0);
-      document.body.appendChild(ctx.canvas);
       return new THREE.CanvasTexture(ctx.canvas);
     }
   });
