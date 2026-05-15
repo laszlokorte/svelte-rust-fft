@@ -107,6 +107,33 @@ fn apply_hann_chunks(data: &mut [Complex<f32>], k: usize) {
         }
     }
 }
+fn apply_gaussian_chunks(data: &mut [Complex<f32>], k: usize) {
+    let n = 1usize << k;
+
+    assert!(data.len() % n == 0);
+
+    match n {
+        0 => unreachable!(),
+        1 => return,
+
+        _ => {}
+    }
+
+    let n_f32 = n as f32;
+    let mu = (n_f32 - 1.0) * 0.5;
+
+    // reasonable default; tweak 0.4 up/down
+    let sigma = 0.4 * mu;
+
+    for chunk in data.chunks_exact_mut(n) {
+        for (i, x) in chunk.iter_mut().enumerate() {
+            let d = i as f32 - mu;
+            let w = (-0.5 * (d * d) / (sigma * sigma)).exp();
+
+            *x *= w;
+        }
+    }
+}
 
 #[wasm_bindgen]
 impl Signal {
@@ -173,15 +200,13 @@ impl Signal {
 
         let mut bin = 0;
         while (1usize << bin) <= len {
-            let chunk_size = 1usize << bin;
-
             let base = bin * len;
             let slice = &mut self.stft[base..base + len];
 
             slice.copy_from_slice(&self.time);
 
             if let Some(bank) = self.stft_bank.get(bin) {
-                apply_hann_chunks(slice, bin);
+                apply_gaussian_chunks(slice, bin);
                 chunked_fftshift(slice, bin);
 
                 bank.process(slice);
