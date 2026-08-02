@@ -1164,15 +1164,15 @@ export const createScene = (
   let wasPresenting = false;
   function resizeRendererToDisplaySize(renderer) {
     const canvas = renderer.domElement;
-    const pixelRatio = window.devicePixelRatio * 2;
-    const width = Math.floor(canvas.clientWidth * pixelRatio);
-    const height = Math.floor(canvas.clientHeight * pixelRatio);
+    const width = Math.floor(canvas.clientWidth);
+    const height = Math.floor(canvas.clientHeight);
     const needResize =
       canvas.width !== width ||
       canvas.height !== height ||
       wasPresenting !== renderer.xr.isPresenting;
     wasPresenting = renderer.xr.isPresenting;
     if (needResize) {
+      renderer.setPixelRatio(window.devicePixelRatio);
       renderer.setSize(width, height, false);
     }
     return needResize;
